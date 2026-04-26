@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 const regex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[.!@#$%^&*])[\S]{8,16}$/;
 const regexNombre = /^[a-zA-Z\s]+$/;
+
 const userSchema = z.object({
   name: z.string()
     .min(6, { message: 'error1' })

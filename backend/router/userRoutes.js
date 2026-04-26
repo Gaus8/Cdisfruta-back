@@ -8,6 +8,6 @@ routerRegister.post('/registro', registrarUsuario);
 
 routerRegister.post('/login', loginUser);
 
-routerRegister.get('/validacion/:token', verificarCuenta);
+routerRegister.post('/validacion', verificarCuenta);
 
 routerRegister.get('/verify-token', verifyToken);

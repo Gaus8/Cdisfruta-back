@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
-  name: {
+  nombre: {
     type: String,
     required: true
   },
@@ -33,11 +33,11 @@ const userSchema = new mongoose.Schema({
     default: null
   },
 
-  verified: {
+  verificado: {
     type: Boolean,
     default: false
   },
-  verificationToken: String
+  codigo_verificacion: String
 });
 
 export default mongoose.model('User', userSchema);

@@ -1,9 +1,8 @@
 import { validateLoginUser, validateRegisterUser } from '../schemaValidations/validateString.js';
-import { generarTokenVerificacion, enviarCorreoVerificacion } from '../middleware/validarEmail.js';
+import { enviarCorreoVerificacion } from '../middleware/validarEmail.js';
 import bcrypt from 'bcrypt';
 import User from '../schema/userSchema.js';
 import jwt from 'jsonwebtoken';
-
 
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
@@ -33,10 +32,10 @@ const validateLogin = async (req, res) => {
       message: 'EMAIL NO REGISTRADO'
     });
   }
-  if (!user.verified) {
+  if (!user.verificado) {
     return res.status(403).json({
       status: 'error',
-      message: 'Debes verificar tu cuenta por correo antes de iniciar sesión.'
+      message: 'Debes verificar tu cuenta antes de iniciar sesión.'
     });
   }
   const checkPassword = await bcrypt.compare(password, user.password);
@@ -72,21 +71,46 @@ const validateLogin = async (req, res) => {
 };
 
 export const verificarCuenta = async (req, res) => {
-  const { token } = req.params;
+  const { email, codigo } = req.body;
+
   try {
-    const user = await User.findOne({ verificationToken: token });
+    const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(400).json({ mensaje: 'Token de verificación inválido o expirado.' });
+      return res.status(404).json({ 
+        status: 'error', 
+        mensaje: 'Usuario no encontrado.' 
+      });
     }
 
-    user.verified = true;
-    user.verificationToken = undefined;
+    if (user.verificado) {
+      return res.status(400).json({ 
+        status: 'error', 
+        mensaje: 'Esta cuenta ya ha sido verificada anteriormente.' 
+      });
+    }
+    
+    if (codigo !== user.codigo_verificacion) {
+      return res.status(400).json({ 
+        status: 'error', 
+        mensaje: 'El código de verificación es incorrecto.' 
+      });
+    }
+
+    user.verificado = true;
+    user.codigo_verificacion = null;
     await user.save();
 
-    // Responder con mensaje JSON, el frontend se encarga de la redirección
-    res.status(200).json({ mensaje: 'Cuenta verificada correctamente.' });
+    return res.status(200).json({ 
+      status: 'success', 
+      mensaje: '¡Cuenta verificada correctamente! Ya puedes iniciar sesión.' 
+    });
+
   } catch (err) {
-    res.status(500).json({ mensaje: 'Error al verificar la cuenta.' });
+    console.error('Error en verificación:', err);
+    return res.status(500).json({ 
+      status: 'error', 
+      mensaje: 'Hubo un problema en el servidor al verificar la cuenta.' 
+    });
   }
 };
