@@ -2,7 +2,7 @@
 import express from 'express';
 import 'dotenv/config';
 import cookieParser from 'cookie-parser';
-// import { connectionDb } from './backend/dbConnection.js';
+import { connectionDb } from './db/connection.js';
 // import { routerRegister } from './backend/router/userRoutes.js';
 // import { routerProducts } from './backend/router/productRoutes.js';
 import cors from 'cors';
@@ -35,7 +35,7 @@ app.post('/api/logout', (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
- // await connectionDb(); // Asegurarte de esperar la conexión
+  await connectionDb(); // Asegurarte de esperar la conexión
   app.listen(PORT, () => {
     console.log(`http://localhost:${PORT}`);
   });
