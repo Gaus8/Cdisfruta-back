@@ -1,16 +1,14 @@
-// Importación de dependencias y métodos de conexion
 import express from 'express';
 import 'dotenv/config';
 import cookieParser from 'cookie-parser';
 import { connectionDb } from './db/connection.js';
-// import { routerRegister } from './backend/router/userRoutes.js';
+import { routerRegister } from './backend/router/userRoutes.js';
 // import { routerProducts } from './backend/router/productRoutes.js';
 import cors from 'cors';
 
 const corsOptions = {
   origin: [
-    'https://inventario-cdisfruta.netlify.app', // producción
-    'http://localhost:5173'                     // desarrollo local
+    'http://localhost:5173'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -19,9 +17,12 @@ const corsOptions = {
 
 
 const app = express();
+
 app.use(cookieParser());
 app.use(cors(corsOptions));
 app.use(express.json());
+
+app.use('/api',routerRegister)
 
 app.get('/',(req,res) =>{
   res.send("El servidor esta funcionando")
