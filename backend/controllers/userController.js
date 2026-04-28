@@ -3,6 +3,8 @@ import { enviarCorreoVerificacion } from '../middleware/validarEmail.js';
 import bcrypt from 'bcrypt';
 import User from '../schema/userSchema.js';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
@@ -49,7 +51,7 @@ const validateLogin = async (req, res) => {
   // Token y validacion con cookies
   const token = jwt.sign({
     id: user.id,
-    name: user.name,
+    nombre: user.nombre,
     email: user.email,
     rol: user.rol
   }, process.env.JWT_TOKEN,
@@ -111,6 +113,65 @@ export const verificarCuenta = async (req, res) => {
     return res.status(500).json({ 
       status: 'error', 
       mensaje: 'Hubo un problema en el servidor al verificar la cuenta.' 
+    });
+  }
+};
+
+// INTEGRACION GOOGLE INICIO DE SESION
+export const googleLogin = async (req, res) => {
+  const { token } = req.body;
+
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    // Google devuelve 'name', pero lo asignamos a 'nombre' 
+    const { name, email } = ticket.getPayload();
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // REGISTRO AUTOMÁTICO
+      user = new User({
+        nombre: name, // 
+        email: email,
+        // Password aleatorio bcrypt
+        password: await bcrypt.hash(Math.random().toString(36).slice(-10), 10),
+        verificado: true, // Se marca como true directamente
+        rol: 'user'
+      });
+      await user.save();
+    }
+
+    // GENERAR TOKEN 
+    const sessionToken = jwt.sign({
+      id: user.id,
+      nombre: user.nombre, // 
+      email: user.email,
+      rol: user.rol
+    }, process.env.JWT_TOKEN, {
+      expiresIn: '1h'
+    });
+
+    res.cookie('access_token', sessionToken, {
+      httpOnly: true,
+      secure: true,      
+      sameSite: 'none',
+      maxAge: 24 * 60 * 60 * 1000
+    })
+    .status(200).json({
+      status: 'success',
+      message: 'Ingreso con Google Exitoso',
+      rol: user.rol
+    });
+
+  } catch (error) {
+    console.error('Error Google Login:', error);
+    res.status(400).json({
+      status: 'error',
+      message: 'Error de autenticación con Google'
     });
   }
 };
