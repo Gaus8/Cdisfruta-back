@@ -1,7 +1,8 @@
 import express from 'express';
-import { loginUser, verificarCuenta, googleLogin } from '../controllers/userController.js';
+import { loginUser, verificarCuenta } from '../controllers/userController.js';
 import { verifyToken } from '../middleware/getToken.js';
 import { registrarUsuario } from '../controllers/usuarios/registrarUsuario.js';
+import { googleLogin } from '../controllers/usuarios/registrarUsuariosGoogle.js';
 export const routerRegister = express.Router();
 
 routerRegister.post('/registro', registrarUsuario);
