@@ -26,7 +26,7 @@ app.use(express.json());
 
 app.use('/api',routerUsuarios)
 app.use('/api',routerProductos)
-
+app.set('trust proxy', 1);
 app.get('/',(req,res) =>{
   res.send("El servidor esta funcionando")
 })
