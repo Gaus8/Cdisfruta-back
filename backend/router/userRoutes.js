@@ -3,14 +3,14 @@ import { loginUser, verificarCuenta } from '../controllers/userController.js';
 import { verifyToken } from '../middleware/getToken.js';
 import { registrarUsuario } from '../controllers/usuarios/registrarUsuario.js';
 import { googleLogin } from '../controllers/usuarios/registrarUsuariosGoogle.js';
-export const routerRegister = express.Router();
+export const routerUsuarios = express.Router();
 
-routerRegister.post('/registro', registrarUsuario);
+routerUsuarios.post('/registro', registrarUsuario);
 
-routerRegister.post('/login', loginUser);
+routerUsuarios.post('/login', loginUser);
 
-routerRegister.post('/validacion', verificarCuenta);
+routerUsuarios.post('/validacion', verificarCuenta);
 
-routerRegister.get('/verify-token', verifyToken);
+routerUsuarios.get('/verify-token', verifyToken);
 
-routerRegister.post('/auth/google', googleLogin);
+routerUsuarios.post('/auth/google', googleLogin);

@@ -2,9 +2,10 @@ import express from 'express';
 import 'dotenv/config';
 import cookieParser from 'cookie-parser';
 import { connectionDb } from './db/connection.js';
-import { routerRegister } from './backend/router/userRoutes.js';
+import { routerUsuarios } from './backend/router/userRoutes.js';
 // import { routerProducts } from './backend/router/productRoutes.js';
 import cors from 'cors';
+import { routerProductos } from './backend/router/productRoutes.js';
 
 const corsOptions = {
   origin: [
@@ -23,7 +24,8 @@ app.use(cookieParser());
 app.use(cors(corsOptions));
 app.use(express.json());
 
-app.use('/api',routerRegister)
+app.use('/api',routerUsuarios)
+app.use('/api',routerProductos)
 
 app.get('/',(req,res) =>{
   res.send("El servidor esta funcionando")
