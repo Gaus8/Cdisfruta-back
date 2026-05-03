@@ -20,8 +20,8 @@ const corsOptions = {
 
 const app = express();
 
-app.use(cookieParser());
 app.use(cors(corsOptions));
+app.use(cookieParser());
 app.use(express.json());
 
 app.use('/api',routerUsuarios)
