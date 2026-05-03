@@ -61,7 +61,19 @@ export const registerProducts = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, precio, categoria, stock, imagen } = req.body;
+    
+    // 1. Los campos de texto vendrán en req.body gracias al middleware
+    const { nombre, descripcion, precio, categoria, stock } = req.body;
+
+    // 2. Lógica para la imagen:
+    // Si el usuario subió una foto nueva, usamos la URL nueva.
+    // Si no, mantenemos la que ya tenía (o la que venga en el body).
+    let imagenActualizada = req.body.imagen; 
+
+    if (req.file) {
+      // Si usas Cloudinary, sería algo como: req.file.path o req.file.secure_url
+      imagenActualizada = req.file.path; 
+    }
 
     const productoActualizado = await Producto.findByIdAndUpdate(
       id,
@@ -71,9 +83,9 @@ export const updateProduct = async (req, res) => {
         precio,
         categoria,
         stock,
-        imagen
+        imagen: imagenActualizada
       },
-      { new: true } // Devuelve el documento actualizado
+      { new: true } 
     );
 
     if (!productoActualizado) {
@@ -85,11 +97,12 @@ export const updateProduct = async (req, res) => {
 
     res.status(200).json({
       status: 'success',
-      message: 'Producto actualizado',
+      message: 'Producto actualizado con éxito',
       product: productoActualizado
     });
 
   } catch (error) {
+    console.error(error);
     res.status(500).json({
       status: 'error',
       message: 'Error al actualizar producto',
