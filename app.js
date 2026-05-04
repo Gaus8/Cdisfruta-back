@@ -14,7 +14,7 @@ const corsOptions = {
     'http://localhost:5173', 
     'https://cdisfruta.vercel.app'
   ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // PATCH habilitado para el "chulo"
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // PATCH habilitado para el "chulooo"
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 };  
