@@ -31,10 +31,10 @@ export const registerProducts = async (req, res) => {
     const newProduct = {
       nombre,
       descripcion,
-      precio,
+      precio: Number(precio), 
       categoria,
-      stock,
-      imagen: imagenUrl
+      stock: Number(stock),
+      imagen: req.file.path
     };
 
     const createProduct = await Producto.create(newProduct);
