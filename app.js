@@ -22,6 +22,11 @@ const corsOptions = {
 const app = express();
 app.set('trust proxy', 1);
 
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  next();
+});
+
 app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
