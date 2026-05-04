@@ -1,10 +1,12 @@
 import express from 'express';
 import 'dotenv/config';
 import cookieParser from 'cookie-parser';
-import { connectionDb } from './db/connection.js';
-import { routerUsuarios } from './backend/router/userRoutes.js';
-// import { routerProducts } from './backend/router/productRoutes.js';
 import cors from 'cors';
+
+// Importaciones de Rutas 
+import { connectionDb } from './db/connection.js';
+import { routerNotificaciones } from './backend/router/notificacionesRouter.js';
+import { routerUsuarios } from './backend/router/userRoutes.js'; 
 import { routerProductos } from './backend/router/productRoutes.js';
 
 const corsOptions = {
@@ -12,11 +14,10 @@ const corsOptions = {
     'http://localhost:5173', 
     'https://cdisfruta.vercel.app'
   ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // PATCH habilitado para el "chulo"
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 };  
-
 
 const app = express();
 app.set('trust proxy', 1);
@@ -25,27 +26,36 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 
-app.use('/api',routerUsuarios)
-app.use('/api',routerProductos)
+// Registro de Rutas con prefijo /api
+app.use('/api', routerUsuarios);
+app.use('/api', routerProductos);
+app.use('/api', routerNotificaciones); 
 
-app.get('/',(req,res) =>{
-  res.send("El servidor esta funcionando")
-})
+app.get('/', (req, res) => {
+  res.send("El servidor de Cdisfruta está funcionando");
+});
 
 app.post('/api/logout', (req, res) => {
-  res.clearCookie('access_token');
+  res.clearCookie('access_token', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none'
+  });
   res.status(200).json({ message: 'Sesión cerrada' });
 });
 
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
-  await connectionDb(); // Asegurarte de esperar la conexión
-  app.listen(PORT, () => {
-    console.log(`http://localhost:${PORT}`);
-  });
+  try {
+    await connectionDb(); 
+    app.listen(PORT, () => {
+      console.log(`Servidor corriendo en: http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error("No se pudo iniciar el servidor:", error);
+  }
 };
-
 
 startServer();
 

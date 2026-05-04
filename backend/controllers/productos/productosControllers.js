@@ -1,4 +1,5 @@
 import Producto from '../../schema/productsSchema.js'
+import Notificacion from '../../schema/notificacionSchema.js';
 
 // Obtener todos los productos
 export const getProducts = async (req, res) => {
@@ -25,7 +26,7 @@ export const registerProducts = async (req, res) => {
       return res.status(400).json({ error: "No se envió ninguna imagen" });
     }
 
-    const imagenUrl = req.file.path
+    const imagenUrl = req.file.path;
 
     const newProduct = {
       nombre,
@@ -33,20 +34,22 @@ export const registerProducts = async (req, res) => {
       precio,
       categoria,
       stock,
-      imagen:imagenUrl
+      imagen: imagenUrl
     };
 
     const createProduct = await Producto.create(newProduct);
+    
     if (createProduct) {
+      // NOTIFICACIÓN DE CREACIÓN
+      await Notificacion.create({ 
+        mensaje: `Se añadió el producto: ${nombre}`,
+        tipo: 'creacion'
+      });
+
       res.status(201).json({
         status: 'success',
         message: 'Producto Creado',
-        product: createProduct // Devuelve el producto creado
-      });
-    } else {
-      res.status(400).json({
-        status: 'error',
-        message: 'Fallo al crear'
+        product: createProduct 
       });
     }
   } catch (error) {
@@ -61,39 +64,29 @@ export const registerProducts = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    // 1. Los campos de texto vendrán en req.body gracias al middleware
     const { nombre, descripcion, precio, categoria, stock } = req.body;
 
-    // 2. Lógica para la imagen:
-    // Si el usuario subió una foto nueva, usamos la URL nueva.
-    // Si no, mantenemos la que ya tenía (o la que venga en el body).
     let imagenActualizada = req.body.imagen; 
-
     if (req.file) {
-      // Si usas Cloudinary, sería algo como: req.file.path o req.file.secure_url
       imagenActualizada = req.file.path; 
     }
 
     const productoActualizado = await Producto.findByIdAndUpdate(
       id,
-      {
-        nombre,
-        descripcion,
-        precio,
-        categoria,
-        stock,
-        imagen: imagenActualizada
-      },
+      { nombre, descripcion, precio, categoria, stock, imagen: imagenActualizada },
       { new: true } 
     );
 
     if (!productoActualizado) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Producto no encontrado'
-      });
+      return res.status(404).json({ status: 'error', message: 'Producto no encontrado' });
     }
+
+    // USAMOS productoActualizado.nombre PARA EVITAR ERRORES DE VARIABLE
+    await Notificacion.create({ 
+      mensaje: `Se actualizó el producto: ${productoActualizado.nombre}`,
+      tipo: 'edicion',
+      leido: false
+    });
 
     res.status(200).json({
       status: 'success',
@@ -102,12 +95,9 @@ export const updateProduct = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Error al actualizar producto',
-      error: error.message
-    });
+    // Si ves este error en la consola, es porque la DB rechazó la notificación
+    console.error("Error al crear notificación:", error.message);
+    res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
@@ -116,14 +106,21 @@ export const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Primero buscamos el producto para obtener el nombre antes de borrarlo
+    const productoABorrar = await Producto.findById(id);
+    const nombreProducto = productoABorrar ? productoABorrar.nombre : "Desconocido";
+
     const productoEliminado = await Producto.findByIdAndDelete(id);
 
     if (!productoEliminado) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Producto no encontrado'
-      });
+      return res.status(404).json({ status: 'error', message: 'Producto no encontrado' });
     }
+
+    // NOTIFICACIÓN DE ELIMINACIÓN
+    await Notificacion.create({ 
+      mensaje: `Se eliminó el producto: ${nombreProducto}`,
+      tipo: 'eliminacion'
+    });
 
     res.status(200).json({
       status: 'success',
