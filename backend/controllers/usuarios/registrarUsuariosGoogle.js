@@ -39,7 +39,7 @@ export const googleLogin = async (req, res) => {
     }
 
     // GENERAR TU JWT PROPIO
-    const sessionToken = jwt.sign({
+    const token = jwt.sign({
       id: user.id,
       nombre: user.nombre,
       email: user.email,
