@@ -60,9 +60,9 @@ const validateLogin = async (req, res) => {
 
   res.cookie('access_token', token, {
     httpOnly: true,
-    secure: true,      // false en desarrollo
-    sameSite: 'none',    // 'lax' o none en desarrollo
-    maxAge: 24 * 60 * 60 * 1000 // 24 horas
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 24 * 60 * 60 * 1000
   })
     .status(200).json({
       status: 'success',
@@ -78,23 +78,23 @@ export const verificarCuenta = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ 
-        status: 'error', 
-        mensaje: 'Usuario no encontrado.' 
+      return res.status(404).json({
+        status: 'error',
+        mensaje: 'Usuario no encontrado.'
       });
     }
 
     if (user.verificado) {
-      return res.status(400).json({ 
-        status: 'error', 
-        mensaje: 'Esta cuenta ya ha sido verificada anteriormente.' 
+      return res.status(400).json({
+        status: 'error',
+        mensaje: 'Esta cuenta ya ha sido verificada anteriormente.'
       });
     }
-    
+
     if (codigo !== user.codigo_verificacion) {
-      return res.status(400).json({ 
-        status: 'error', 
-        mensaje: 'El código de verificación es incorrecto.' 
+      return res.status(400).json({
+        status: 'error',
+        mensaje: 'El código de verificación es incorrecto.'
       });
     }
 
@@ -102,16 +102,16 @@ export const verificarCuenta = async (req, res) => {
     user.codigo_verificacion = null;
     await user.save();
 
-    return res.status(200).json({ 
-      status: 'success', 
-      mensaje: '¡Cuenta verificada correctamente! Ya puedes iniciar sesión.' 
+    return res.status(200).json({
+      status: 'success',
+      mensaje: '¡Cuenta verificada correctamente! Ya puedes iniciar sesión.'
     });
 
   } catch (err) {
     console.error('Error en verificación:', err);
-    return res.status(500).json({ 
-      status: 'error', 
-      mensaje: 'Hubo un problema en el servidor al verificar la cuenta.' 
+    return res.status(500).json({
+      status: 'error',
+      mensaje: 'Hubo un problema en el servidor al verificar la cuenta.'
     });
   }
 };
