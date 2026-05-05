@@ -15,7 +15,7 @@ export const googleLogin = async (req, res) => {
   try {
 
     const { tokens } = await client.getToken(code);
-    
+
     // 3. VALIDACIÓN: Ahora sí usamos el id_token que nos dio Google
     const ticket = await client.verifyIdToken({
       idToken: tokens.id_token,
@@ -49,17 +49,18 @@ export const googleLogin = async (req, res) => {
     });
 
     // SETEAR COOKIE Y RESPONDER
-    res.cookie('access_token', sessionToken, {
+    res.cookie('access_token', token, {
       httpOnly: true,
-      secure: true, // true para producción/HTTPS
-      sameSite: 'none',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 24 * 60 * 60 * 1000
     })
-    .status(200).json({
-      status: 'success',
-      message: 'Ingreso con Google Exitoso',
-      rol: user.rol
-    });
+      .status(200).json({
+        status: 'success',
+        message: 'Ingreso Exitoso',
+        rol: user.rol,
+        token  // 👈 agrega esto
+      });
 
   } catch (error) {
     console.error('Error Google Login:', error);
