@@ -14,7 +14,7 @@ const corsOptions = {
     'http://localhost:5173', 
     'https://cdisfruta.vercel.app'
   ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // PATCH habilitado para el "chulooo"
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 };  
@@ -30,6 +30,9 @@ app.use((req, res, next) => {
 app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
+
+// NUEVA LÍNEA: Sirve archivos estáticos
+app.use('/legales', express.static('public/legales'));
 
 // Registro de Rutas con prefijo /api
 app.use('/api', routerUsuarios);

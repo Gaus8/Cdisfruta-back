@@ -37,7 +37,13 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  codigo_verificacion: String
+  codigo_verificacion: String,
+
+  terminosAceptados: {
+    type: Boolean,
+    required: true
+  }
+
 });
 
 export default mongoose.model('User', userSchema);
