@@ -31,9 +31,6 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 
-// NUEVA LÍNEA: Sirve archivos estáticos
-app.use('/legales', express.static('public/legales'));
-
 // Registro de Rutas con prefijo /api
 app.use('/api', routerUsuarios);
 app.use('/api', routerProductos);
