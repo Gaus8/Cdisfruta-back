@@ -14,18 +14,18 @@ const userSchema = z.object({
 
   password: z.string().regex(regex, { message: 'error3' }),
 
-  // Agregamos la validación del booleano para los términos
-  terminosAceptados: z.boolean({
-    required_error: "Debes aceptar los términos y condiciones",
-    invalid_type_error: "Formato inválido para los términos"
+  // Exige que el valor sea booleano Y que sea obligatoriamente TRUE
+  terminosAceptados: z.literal(true, {
+    errorMap: () => ({ message: "Debes aceptar los términos y condiciones" })
   })
 });
 
 export function validateRegisterUser (input) {
   return userSchema.safeParse(input);
-};
+}
 
 export function validateLoginUser (input) {
-  // partial() hace que en el login no sea obligatorio enviar nombre ni terminos
-  return userSchema.partial().safeParse(input);
+  // Para el login aislamos únicamente los campos requeridos (email y password)
+  const loginSchema = userSchema.pick({ email: true, password: true });
+  return loginSchema.safeParse(input);
 }
