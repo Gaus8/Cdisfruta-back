@@ -1,7 +1,7 @@
-import { validateLoginUser } from '../schemaValidations/validateString.js';
-import { enviarCorreoVerificacion } from '../middleware/validarEmail.js';
+import { validateLoginUser } from '../../schemaValidations/validateString.js';
+import { enviarCorreoVerificacion } from '../../middleware/validarEmail.js';
 import bcrypt from 'bcrypt';
-import User from '../schema/userSchema.js';
+import User from '../../schema/userSchema.js';
 import jwt from 'jsonwebtoken';
 import { v2 as cloudinary } from 'cloudinary';
 

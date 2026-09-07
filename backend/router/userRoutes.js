@@ -6,7 +6,7 @@ import {
   actualizarAvatar, 
   solicitarCodigoPass, 
   cambiarPasswordSeguro 
-} from '../controllers/userController.js';
+} from '../controllers/usuarios/userController.js';
 import { verifyToken } from '../middleware/getToken.js';
 import { registrarUsuario } from '../controllers/usuarios/registrarUsuario.js';
 import { googleLogin } from '../controllers/usuarios/registrarUsuariosGoogle.js';
@@ -23,8 +23,8 @@ routerUsuarios.get('/verify-token', verifyToken);
 routerUsuarios.post('/auth/google', googleLogin);
 
 // --- Rutas Protegidas de Configuración de Usuario ---
-routerUsuarios.put('/actualizar-perfil', verifyToken, actualizarPerfil);
+routerUsuarios.put('/usuario/actualizar-perfil', verifyToken, actualizarPerfil);
 // Nota: Si usas multer para la imagen, añade el middleware de subida ej: verifyToken, upload.single('avatar'), actualizarAvatar
-routerUsuarios.put('/actualizar-avatar', verifyToken, actualizarAvatar); 
-routerUsuarios.post('/solicitar-codigo-pass', verifyToken, solicitarCodigoPass);
-routerUsuarios.put('/cambiar-password-seguro', verifyToken, cambiarPasswordSeguro);
+routerUsuarios.put('/usuario/actualizar-avatar', verifyToken, actualizarAvatar); 
+routerUsuarios.post('/usuario/solicitar-codigo-pass', verifyToken, solicitarCodigoPass);
+routerUsuarios.put('/usuario/cambiar-password-seguro', verifyToken, cambiarPasswordSeguro);
