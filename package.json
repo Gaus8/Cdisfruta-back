@@ -4,9 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node --watch app.js"
-  },
+  "test": "echo \"Error: no test specified\" && exit 1",
+  "dev": "node --watch app.js",
+  "start": "node app.js"
+},
+
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Gaus8/Cdisfruta-back.git"
