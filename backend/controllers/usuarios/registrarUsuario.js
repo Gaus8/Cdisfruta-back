@@ -1,5 +1,5 @@
 import { validateRegisterUser } from '../../schemaValidations/validateString.js';
-import { enviarCorreoVerificacion } from '../../middleware/validarEmail.js';
+import { enviarCorreoVerificacion } from '../../middleware/enviarEmail.js';
 import bcrypt from 'bcrypt';
 import User from '../../schema/userSchema.js';
 

@@ -1,10 +1,10 @@
 import { validateLoginUser } from '../../schemaValidations/validateString.js';
-import { enviarCorreoVerificacion } from '../../middleware/validarEmail.js';
+import { enviarCorreoRecuperacion } from '../../middleware/enviarEmail.js';
 import bcrypt from 'bcrypt';
 import User from '../../schema/userSchema.js';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { v2 as cloudinary } from 'cloudinary';
-
 
 // 1. LOGIN Y VERIFICACIÓN EXISTENTES
 
@@ -180,32 +180,74 @@ export const actualizarAvatar = async (req, res) => {
 };
 
 
-// 3. SEGURIDAD Y CAMBIO SEGURO DE CONTRASEÑA
+// 3. RECUPERACIÓN DE CONTRASEÑA
 
-export const solicitarCodigoPass = async (req, res) => {
+export const solicitarRestablecerPassword = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const user = await User.findById(userId);
+    const { email } = req.body;
 
-    if (!user) {
-      return res.status(404).json({ status: 'error', message: 'Usuario no encontrado' });
+    if (!email) {
+      return res.status(400).json({ message: 'El correo electrónico es obligatorio.' });
     }
 
-    const codigo = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    user.resetPasswordToken = codigo;
-    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // Expira en 15 minutos
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'No existe una cuenta con este correo.' });
+    }
+
+    // Generar token seguro
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    // Guardar token y expiración (15 minutos)
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
     await user.save();
 
-    await enviarCorreoVerificacion(user.email, codigo);
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
-    res.status(200).json({
-      status: 'success',
-      message: 'Código de verificación enviado al correo electrónico'
+    // Pasamos tanto el objeto usuario como el correo directo por compatibilidad
+    await enviarCorreoRecuperacion(user, resetUrl);
+
+    return res.status(200).json({ message: 'Se ha enviado un enlace de recuperación a tu correo.' });
+  } catch (error) {
+    console.error('Error detallado en solicitarRestablecerPassword:', error);
+    return res.status(500).json({ 
+      message: 'Error al procesar el envío del correo.',
+      error: error.message 
     });
-  } catch (err) {
-    console.error('Error al solicitar código:', err);
-    res.status(500).json({ status: 'error', message: 'Error al enviar el correo de verificación' });
+  }
+};
+
+export const restablecerPasswordConToken = async (req, res) => {
+  try {
+    const { token, nuevaPassword } = req.body;
+
+    if (!token || !nuevaPassword) {
+      return res.status(400).json({ message: 'El token y la nueva contraseña son obligatorios.' });
+    }
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'El enlace es inválido o ha expirado.' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(nuevaPassword, salt);
+
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return res.status(200).json({ message: 'Contraseña actualizada correctamente.' });
+  } catch (error) {
+    console.error('Error en restablecerPasswordConToken:', error);
+    return res.status(500).json({ message: 'Error en el servidor al restablecer la contraseña.' });
   }
 };
 
@@ -234,9 +276,9 @@ export const cambiarPasswordSeguro = async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(nuevaPassword, salt);
-    
-    user.resetPasswordToken = null;
-    user.resetPasswordExpires = null;
+
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
     await user.save();
 
     res.status(200).json({
