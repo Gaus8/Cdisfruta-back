@@ -18,15 +18,18 @@ export const getProducts = async (req, res) => {
   }
 };
 
-// Crear producto
+// Crear producto con múltiples imágenes
 export const registerProducts = async (req, res) => {
   try {
     const { nombre, descripcion, precio, categoria, stock } = req.body;
-    if (!req.file) {
+    
+    // Verificamos si se enviaron archivos en req.files
+    if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: "No se envió ninguna imagen" });
     }
 
-    const imagenUrl = req.file.path;
+    // Mapeamos las URLs de Cloudinary de todos los archivos subidos
+    const imagenesUrls = req.files.map(file => file.path);
 
     const newProduct = {
       nombre,
@@ -34,13 +37,13 @@ export const registerProducts = async (req, res) => {
       precio: Number(precio), 
       categoria,
       stock: Number(stock),
-      imagen: req.file.path
+      imagen: imagenesUrls[0], // Primera imagen como principal (por compatibilidad)
+      imagenes: imagenesUrls     // Array completo de imágenes para la galería
     };
 
     const createProduct = await Producto.create(newProduct);
     
     if (createProduct) {
-      // NOTIFICACIÓN DE CREACIÓN
       await Notificacion.create({ 
         mensaje: `Se añadió el producto: ${nombre}`,
         tipo: 'creacion'
@@ -60,28 +63,44 @@ export const registerProducts = async (req, res) => {
   }
 };
 
-// Actualizar producto
+// Actualizar producto con soporte para múltiples imágenes
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, descripcion, precio, categoria, stock } = req.body;
 
-    let imagenActualizada = req.body.imagen; 
-    if (req.file) {
-      imagenActualizada = req.file.path; 
-    }
-
-    const productoActualizado = await Producto.findByIdAndUpdate(
-      id,
-      { nombre, descripcion, precio, categoria, stock, imagen: imagenActualizada },
-      { new: true } 
-    );
-
-    if (!productoActualizado) {
+    // Buscamos el producto actual para conservar las imágenes si no se envían nuevas
+    const productoExistente = await Producto.findById(id);
+    if (!productoExistente) {
       return res.status(404).json({ status: 'error', message: 'Producto no encontrado' });
     }
 
-    // USAMOS productoActualizado.nombre PARA EVITAR ERRORES DE VARIABLE
+    let imagenesActualizadas = productoExistente.imagenes || [];
+
+    // Si el usuario subió nuevas imágenes desde el admin, las agregamos o reemplazamos
+    if (req.files && req.files.length > 0) {
+      const nuevasUrls = req.files.map(file => file.path);
+      // Puedes elegir si quieres reemplazar todas o concatenarlas. 
+      // Lo ideal al editar por galería completa es reemplazar por las nuevas seleccionadas:
+      imagenesActualizadas = nuevasUrls;
+    }
+
+    const imagenPrincipal = imagenesActualizadas.length > 0 ? imagenesActualizadas[0] : productoExistente.imagen;
+
+    const productoActualizado = await Producto.findByIdAndUpdate(
+      id,
+      { 
+        nombre, 
+        descripcion, 
+        precio, 
+        categoria, 
+        stock, 
+        imagen: imagenPrincipal,
+        imagenes: imagenesActualizadas 
+      },
+      { new: true } 
+    );
+
     await Notificacion.create({ 
       mensaje: `Se actualizó el producto: ${productoActualizado.nombre}`,
       tipo: 'edicion',
@@ -95,8 +114,7 @@ export const updateProduct = async (req, res) => {
     });
 
   } catch (error) {
-    // Si ves este error en la consola, es porque la DB rechazó la notificación
-    console.error("Error al crear notificación:", error.message);
+    console.error("Error al actualizar producto:", error.message);
     res.status(500).json({ status: 'error', message: error.message });
   }
 };
@@ -106,7 +124,6 @@ export const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Primero buscamos el producto para obtener el nombre antes de borrarlo
     const productoABorrar = await Producto.findById(id);
     const nombreProducto = productoABorrar ? productoABorrar.nombre : "Desconocido";
 
@@ -116,7 +133,6 @@ export const deleteProduct = async (req, res) => {
       return res.status(404).json({ status: 'error', message: 'Producto no encontrado' });
     }
 
-    // NOTIFICACIÓN DE ELIMINACIÓN
     await Notificacion.create({ 
       mensaje: `Se eliminó el producto: ${nombreProducto}`,
       tipo: 'eliminacion'
