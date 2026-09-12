@@ -27,8 +27,12 @@ const productoSchema = new mongoose.Schema({
     default: 0
   },
   imagen: {
-    type: String, // URL o nombre del archivo
+    type: String, // Imagen principal de respaldo
     default: ''
+  },
+  imagenes: {
+    type: [String], // Array para almacenar las múltiples fotos de la galería
+    default: []
   },
   fechaCreacion: {
     type: Date,
