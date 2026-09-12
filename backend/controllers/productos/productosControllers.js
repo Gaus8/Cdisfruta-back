@@ -23,12 +23,10 @@ export const registerProducts = async (req, res) => {
   try {
     const { nombre, descripcion, precio, categoria, stock } = req.body;
     
-    // Verificamos si se enviaron archivos en req.files
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: "No se envió ninguna imagen" });
     }
 
-    // Mapeamos las URLs de Cloudinary de todos los archivos subidos
     const imagenesUrls = req.files.map(file => file.path);
 
     const newProduct = {
@@ -37,8 +35,8 @@ export const registerProducts = async (req, res) => {
       precio: Number(precio), 
       categoria,
       stock: Number(stock),
-      imagen: imagenesUrls[0], // Primera imagen como principal (por compatibilidad)
-      imagenes: imagenesUrls     // Array completo de imágenes para la galería
+      imagen: imagenesUrls[0],
+      imagenes: imagenesUrls
     };
 
     const createProduct = await Producto.create(newProduct);
@@ -63,40 +61,48 @@ export const registerProducts = async (req, res) => {
   }
 };
 
-// Actualizar producto con soporte para múltiples imágenes
+// Actualizar producto procesando imágenes existentes restantes y nuevas subidas
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, precio, categoria, stock } = req.body;
+    const { nombre, descripcion, precio, categoria, stock, imagenesExistentes } = req.body;
 
-    // Buscamos el producto actual para conservar las imágenes si no se envían nuevas
     const productoExistente = await Producto.findById(id);
     if (!productoExistente) {
       return res.status(404).json({ status: 'error', message: 'Producto no encontrado' });
     }
 
-    let imagenesActualizadas = productoExistente.imagenes || [];
-
-    // Si el usuario subió nuevas imágenes desde el admin, las agregamos o reemplazamos
-    if (req.files && req.files.length > 0) {
-      const nuevasUrls = req.files.map(file => file.path);
-      // Puedes elegir si quieres reemplazar todas o concatenarlas. 
-      // Lo ideal al editar por galería completa es reemplazar por las nuevas seleccionadas:
-      imagenesActualizadas = nuevasUrls;
+    // 1. Recolectamos las imágenes que el usuario decidió conservar
+    let imagenesFinales = [];
+    if (imagenesExistentes) {
+      imagenesFinales = Array.isArray(imagenesExistentes) ? imagenesExistentes : [imagenesExistentes];
     }
 
-    const imagenPrincipal = imagenesActualizadas.length > 0 ? imagenesActualizadas[0] : productoExistente.imagen;
+    // 2. Si se subieron nuevas imágenes, las añadimos a la lista
+    if (req.files && req.files.length > 0) {
+      const nuevasUrls = req.files.map(file => file.path);
+      imagenesFinales = [...imagenesFinales, ...nuevasUrls];
+    }
+
+    // Si por alguna razón no quedó ninguna, por seguridad conservamos las anteriores
+    if (imagenesFinales.length === 0) {
+      imagenesFinales = productoExistente.imagenes || [productoExistente.imagen].filter(Boolean);
+    }
+
+    // Límite de 5 y definición de la imagen principal
+    imagenesFinales = imagenesFinales.slice(0, 5);
+    const imagenPrincipal = imagenesFinales.length > 0 ? imagenesFinales[0] : '';
 
     const productoActualizado = await Producto.findByIdAndUpdate(
       id,
       { 
         nombre, 
         descripcion, 
-        precio, 
+        precio: Number(precio), 
         categoria, 
-        stock, 
+        stock: Number(stock), 
         imagen: imagenPrincipal,
-        imagenes: imagenesActualizadas 
+        imagenes: imagenesFinales 
       },
       { new: true } 
     );
