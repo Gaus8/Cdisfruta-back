@@ -43,10 +43,11 @@ app.get('/', (req, res) => {
 app.post('/api/logout', (req, res) => {
   res.clearCookie('access_token', {
     httpOnly: true,
-    secure: true,
-    sameSite: 'none'
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
   });
-  res.status(200).json({ message: 'Sesión cerrada' });
+
+  return res.status(200).json({ status: 'success', message: 'Sesión cerrada' });
 });
 
 const PORT = process.env.PORT || 5000;

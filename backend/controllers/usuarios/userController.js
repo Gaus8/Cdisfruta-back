@@ -16,7 +16,9 @@ export const loginUser = async (req, res) => {
       message: 'Todos los campos deben ser llenados'
     });
   }
-  validateLogin(req, res);
+
+  // Agregamos await para esperar la ejecución completa
+  return await validateLogin(req, res);
 };
 
 const validateLogin = async (req, res) => {
@@ -36,42 +38,50 @@ const validateLogin = async (req, res) => {
       message: 'EMAIL NO REGISTRADO'
     });
   }
+
   if (!user.verificado) {
     return res.status(403).json({
       status: 'error',
       message: 'Debes verificar tu cuenta antes de iniciar sesión.'
     });
   }
-  const checkPassword = await bcrypt.compare(password, user.password);
 
+  const checkPassword = await bcrypt.compare(password, user.password);
   if (!checkPassword) {
-    return res.status(404).json({
+    return res.status(400).json({ // Cambiado de 404 a 400 (Bad Request)
       status: 'error',
       message: 'Contraseña incorrecta'
     });
   }
 
-  const token = jwt.sign({
-    id: user.id,
-    nombre: user.nombre,
-    email: user.email,
-    rol: user.rol
-  }, process.env.JWT_TOKEN, {
-    expiresIn: '1h'
-  });
+const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
-  res.cookie('access_token', token, {
+  const token = jwt.sign(
+    {
+      id: user._id,
+      nombre: user.nombre,
+      email: user.email,
+      rol: user.rol
+    },
+    process.env.JWT_TOKEN,
+    { expiresIn: '5m' } // 5m = 5 minutos en jsonwebtoken
+  );
+
+  return res.cookie('access_token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: FIVE_MINUTES_MS // Sincronizado a 300,000 ms
   })
-    .status(200).json({
-      status: 'success',
-      message: 'Ingreso Exitoso',
-      rol: user.rol,
-      token
-    });
+  .status(200).json({
+    status: 'success',
+    message: 'Ingreso Exitoso',
+    user: {
+      nombre: user.nombre,
+      email: user.email,
+      rol: user.rol
+    }
+  });
 };
 
 export const verificarCuenta = async (req, res) => {
