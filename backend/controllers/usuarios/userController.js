@@ -54,7 +54,7 @@ const validateLogin = async (req, res) => {
     });
   }
 
-const FIVE_MINUTES_MS = 5 * 60 * 1000;
+const FIVE_MINUTES_MS = 15 * 60 * 1000;
 
   const token = jwt.sign(
     {
@@ -64,7 +64,7 @@ const FIVE_MINUTES_MS = 5 * 60 * 1000;
       rol: user.rol
     },
     process.env.JWT_TOKEN,
-    { expiresIn: '5m' } // 5m = 5 minutos en jsonwebtoken
+    { expiresIn: '15m' } // 5m = 5 minutos en jsonwebtoken
   );
 
   return res.cookie('access_token', token, {
