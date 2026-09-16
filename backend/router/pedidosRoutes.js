@@ -5,12 +5,14 @@ import {
   obtenerTodosLosPedidos, 
   actualizarEstadoPedido 
 } from '../controllers/productos/pedidosControllers.js'; 
+import { verificarTokenMiddleware } from '../middleware/authMiddleware.js'; 
 
 const router = express.Router();
 
-router.post('/pedidos', crearPedido);                    // Crear pedido al comprar
-router.get('/mis-pedidos/:usuarioId', obtenerMisPedidos); // Ver historial del usuario
-router.get('/admin/pedidos', obtenerTodosLosPedidos);     // Ver todos los pedidos (Admin)
-router.put('/admin/pedidos/:id/estado', actualizarEstadoPedido); // Cambiar estado (Admin)
+// Rutas protegidas con verificación de token (inyectan req.user)
+router.post('/pedidos', verificarTokenMiddleware, crearPedido);                    
+router.get('/mis-pedidos', verificarTokenMiddleware, obtenerMisPedidos); 
+router.get('/admin/pedidos', verificarTokenMiddleware, obtenerTodosLosPedidos);     
+router.patch('/admin/pedidos/:id/estado', verificarTokenMiddleware, actualizarEstadoPedido); 
 
 export default router;
