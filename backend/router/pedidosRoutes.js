@@ -14,5 +14,6 @@ router.post('/pedidos', verificarTokenMiddleware, crearPedido);
 router.get('/pedidos/mis-pedidos', verificarTokenMiddleware, obtenerMisPedidos); 
 router.get('/admin/pedidos', verificarTokenMiddleware, obtenerTodosLosPedidos);     
 router.patch('/admin/pedidos/:id/estado', verificarTokenMiddleware, actualizarEstadoPedido); 
+router.patch('/pedidos/:id/estado', verificarTokenMiddleware, actualizarEstadoPedido);
 
 export default router;
