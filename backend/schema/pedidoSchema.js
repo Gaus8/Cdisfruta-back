@@ -16,7 +16,7 @@ const pedidoSchema = new mongoose.Schema({
       nombre: { type: String, required: true },
       precio: { type: Number, required: true },
       cantidad: { type: Number, required: true, min: 1 },
-      imagen: { type: String } // 👈 Agregamos esto aquí
+      imagen: { type: String } 
     }
   ],
   total: {
@@ -39,6 +39,7 @@ const pedidoSchema = new mongoose.Schema({
     enum: ['Pendiente', 'Comprobado', 'Enviado', 'Entregado', 'Cancelado'],
     default: 'Pendiente'
   },
+  motivoCancelacion: { type: String },
   fechaCreacion: {
     type: Date,
     default: Date.now

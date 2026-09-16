@@ -74,7 +74,7 @@ export const obtenerTodosLosPedidos = async (req, res) => {
 export const actualizarEstadoPedido = async (req, res) => {
   try {
     const { id } = req.params;
-    const { estado } = req.body;
+    const { estado, motivo } = req.body;
 
     const estadosValidos = ['Pendiente', 'Comprobado', 'Enviado', 'Entregado', 'Cancelado'];
     if (!estadosValidos.includes(estado)) {
