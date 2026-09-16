@@ -4,24 +4,33 @@ import Notificacion from '../../schema/notificacionSchema.js';
 // 1. Crear un nuevo pedido (al finalizar compra)
 export const crearPedido = async (req, res) => {
   try {
-    // Asumimos que guardas el ID del usuario en req.user (gracias a tu middleware de autenticación/JWT) o en req.body
-    const usuarioId = req.user ? req.user.id : req.body.usuarioId;
-    const { productos, total } = req.body;
+    // Tomamos el usuario de req.user (si hay token) o del body (usuario o usuarioId)
+    const usuarioId = req.user?.id || req.body.usuario || req.body.usuarioId;
+    const { productos, total, datosEnvio } = req.body;
+
+    if (!usuarioId) {
+      return res.status(400).json({ status: 'error', message: 'No se encontró el ID del usuario autenticado' });
+    }
 
     if (!productos || productos.length === 0) {
       return res.status(400).json({ status: 'error', message: 'El carrito está vacío' });
+    }
+
+    if (!datosEnvio) {
+      return res.status(400).json({ status: 'error', message: 'Faltan los datos de envío' });
     }
 
     const nuevoPedido = await Pedido.create({
       usuario: usuarioId,
       productos,
       total,
+      datosEnvio,
       estado: 'Pendiente'
     });
 
     // Creamos una notificación para el panel de administración
     await Notificacion.create({
-      mensaje: `Nuevo pedido recibido por un valor de $${total}`,
+      mensaje: `Nuevo pedido recibido de ${datosEnvio.nombres} ${datosEnvio.apellidos} por un valor de $${total}`,
       tipo: 'creacion'
     });
 
@@ -52,7 +61,7 @@ export const obtenerMisPedidos = async (req, res) => {
 export const obtenerTodosLosPedidos = async (req, res) => {
   try {
     const pedidos = await Pedido.find()
-      .populate('usuario', 'nombre correo') // Trae los datos básicos del cliente si tu modelo de usuario se llama 'User'
+      .populate('usuario', 'nombre correo') 
       .sort({ fechaCreacion: -1 });
 
     res.status(200).json(pedidos);
@@ -61,13 +70,13 @@ export const obtenerTodosLosPedidos = async (req, res) => {
   }
 };
 
-// 4. Actualizar el estado del pedido (Para el Admin: Pendiente, Comprobado, Enviado, Entregado)
+// 4. Actualizar el estado del pedido (Para el Admin: Pendiente, Comprobado, Enviado, Entregado, Cancelado)
 export const actualizarEstadoPedido = async (req, res) => {
   try {
     const { id } = req.params;
     const { estado } = req.body;
 
-    const estadosValidos = ['Pendiente', 'Comprobado', 'Enviado', 'Entregado'];
+    const estadosValidos = ['Pendiente', 'Comprobado', 'Enviado', 'Entregado', 'Cancelado'];
     if (!estadosValidos.includes(estado)) {
       return res.status(400).json({ status: 'error', message: 'Estado no válido' });
     }
