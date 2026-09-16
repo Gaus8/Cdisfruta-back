@@ -15,7 +15,8 @@ const pedidoSchema = new mongoose.Schema({
       },
       nombre: { type: String, required: true },
       precio: { type: Number, required: true },
-      cantidad: { type: Number, required: true, min: 1 }
+      cantidad: { type: Number, required: true, min: 1 },
+      imagen: { type: String } // 👈 Agregamos esto aquí
     }
   ],
   total: {
