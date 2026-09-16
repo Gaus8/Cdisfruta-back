@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const pedidoSchema = new mongoose.Schema({
   usuario: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // Asegúrate de que coincida con el nombre de tu modelo de usuarios
+    ref: 'User',
     required: true
   },
   productos: [
@@ -21,6 +21,17 @@ const pedidoSchema = new mongoose.Schema({
   total: {
     type: Number,
     required: true
+  },
+  datosEnvio: {
+    nombres: { type: String, required: true },
+    apellidos: { type: String, required: true },
+    whatsapp: { type: String, required: true },
+    departamento: { type: String, required: true },
+    municipio: { type: String, required: true },
+    direccion: { type: String, required: true },
+    barrio: { type: String, required: true },
+    correo: { type: String },
+    nota: { type: String }
   },
   estado: {
     type: String,
