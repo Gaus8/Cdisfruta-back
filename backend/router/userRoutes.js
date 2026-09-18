@@ -20,7 +20,7 @@ export const routerUsuarios = express.Router();
 routerUsuarios.post('/registro', registrarUsuario);
 routerUsuarios.post('/login', loginUser);
 routerUsuarios.post('/verificar-cuenta', verificarCuenta);
-routerUsuarios.get('/verify-token', verifyToken);
+routerUsuarios.get('/verificar-token', verifyToken);
 routerUsuarios.post('/google', googleLogin);
 routerUsuarios.post('/codigo-password',solicitarRestablecerPassword);
 routerUsuarios.post('/reset-password', restablecerPasswordConToken);
