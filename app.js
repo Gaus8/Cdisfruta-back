@@ -2,6 +2,7 @@ import express from 'express';
 import 'dotenv/config';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import morgan from 'morgan';
 
 // Importaciones de Rutas 
 import { connectionDb } from './db/connection.js';
@@ -30,9 +31,10 @@ app.use((req, res, next) => {
 app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
+app.use(morgan('dev'));
 
 // Registro de Rutas con prefijo /api
-app.use('/api', routerUsuarios);
+app.use('/api/auth', routerUsuarios);
 app.use('/api', routerProductos);
 app.use('/api', routerNotificaciones); 
 

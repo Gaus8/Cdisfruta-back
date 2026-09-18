@@ -19,11 +19,11 @@ export const routerUsuarios = express.Router();
 
 routerUsuarios.post('/registro', registrarUsuario);
 routerUsuarios.post('/login', loginUser);
-routerUsuarios.post('/validacion', verificarCuenta);
+routerUsuarios.post('/verificar-cuenta', verificarCuenta);
 routerUsuarios.get('/verify-token', verifyToken);
-routerUsuarios.post('/auth/google', googleLogin);
-routerUsuarios.post('/usuario/codigo-password',solicitarRestablecerPassword);
-routerUsuarios.post('/usuario/reset-password', restablecerPasswordConToken);
+routerUsuarios.post('/google', googleLogin);
+routerUsuarios.post('/codigo-password',solicitarRestablecerPassword);
+routerUsuarios.post('/reset-password', restablecerPasswordConToken);
 
 // --- Rutas Protegidas de Configuración de Usuario ---
 routerUsuarios.put('/usuario/actualizar-perfil', verifyToken, actualizarPerfil);
