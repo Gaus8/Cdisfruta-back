@@ -54,7 +54,7 @@ const validateLogin = async (req, res) => {
     });
   }
 
-const FIVE_MINUTES_MS = 15 * 60 * 1000;
+  const FIVE_MINUTES_MS = 15 * 60 * 1000;
 
   const token = jwt.sign(
     {
@@ -67,21 +67,23 @@ const FIVE_MINUTES_MS = 15 * 60 * 1000;
     { expiresIn: '15m' } // 5m = 5 minutos en jsonwebtoken
   );
 
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+
   return res.cookie('access_token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: FIVE_MINUTES_MS // Sincronizado a 300,000 ms
+    secure: true,                             // 👈 Obligatorio en Vercel (HTTPS)
+    sameSite: isProduction ? 'none' : 'lax',  // 👈 'none' obligatorio para dominios cruzados
+    maxAge: FIVE_MINUTES_MS
   })
-  .status(200).json({
-    status: 'success',
-    message: 'Ingreso Exitoso',
-    user: {
-      nombre: user.nombre,
-      email: user.email,
-      rol: user.rol
-    }
-  });
+    .status(200).json({
+      status: 'success',
+      message: 'Ingreso Exitoso',
+      user: {
+        nombre: user.nombre,
+        email: user.email,
+        rol: user.rol
+      }
+    });
 };
 
 export const verificarCuenta = async (req, res) => {
@@ -217,9 +219,9 @@ export const solicitarRestablecerPassword = async (req, res) => {
     return res.status(200).json({ message: 'Se ha enviado un enlace de recuperación a tu correo.' });
   } catch (error) {
     console.error('Error detallado en solicitarRestablecerPassword:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       message: 'Error al procesar el envío del correo.',
-      error: error.message 
+      error: error.message
     });
   }
 };
@@ -257,32 +259,32 @@ export const restablecerPasswordConToken = async (req, res) => {
 
 export const cambiarPasswordDesdeApp = async (req, res) => {
   try {
-    const userId = req.user.id; 
+    const userId = req.user.id;
     const { passActual, nuevaPassword } = req.body;
 
     // 1. Validar que ambos campos estén presentes
     if (!passActual || !nuevaPassword) {
-      return res.status(400).json({ 
-        status: 'error', 
-        message: 'La contraseña actual y la nueva son obligatorias' 
+      return res.status(400).json({
+        status: 'error',
+        message: 'La contraseña actual y la nueva son obligatorias'
       });
     }
 
     // 2. Buscar al usuario en MongoDB
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ 
-        status: 'error', 
-        message: 'Usuario no encontrado' 
+      return res.status(404).json({
+        status: 'error',
+        message: 'Usuario no encontrado'
       });
     }
 
     // 3. Verificar que la contraseña actual sea correcta
     const esPasswordCorrecta = await bcrypt.compare(passActual, user.password);
     if (!esPasswordCorrecta) {
-      return res.status(401).json({ 
-        status: 'error', 
-        message: 'La contraseña actual es incorrecta' 
+      return res.status(401).json({
+        status: 'error',
+        message: 'La contraseña actual es incorrecta'
       });
     }
 
@@ -299,9 +301,9 @@ export const cambiarPasswordDesdeApp = async (req, res) => {
 
   } catch (err) {
     console.error('Error al cambiar contraseña:', err);
-    return res.status(500).json({ 
-      status: 'error', 
-      message: 'Error en el servidor al cambiar la contraseña' 
+    return res.status(500).json({
+      status: 'error',
+      message: 'Error en el servidor al cambiar la contraseña'
     });
   }
 };
