@@ -11,6 +11,7 @@ import {
 import { verifyToken } from '../middleware/getToken.js';
 import { registrarUsuario } from '../controllers/usuarios/registrarUsuario.js';
 import { googleLogin } from '../controllers/usuarios/registrarUsuariosGoogle.js';
+import { subirAvatarPerfil } from '../middleware/subirImg.js';
 
 // Si usas multer para manejar la subida de imágenes a Cloudinary:
 // import upload from '../middleware/uploadMiddleware.js'; 
@@ -33,8 +34,7 @@ routerUsuarios.post('/codigo-password',solicitarRestablecerPassword);
 routerUsuarios.post('/reset-password', restablecerPasswordConToken);
 routerUsuarios.patch('/cambiar-password', verifyToken, cambiarPasswordDesdeApp);
 
-// --- Rutas Protegidas de Configuración de Usuario ---
-routerUsuarios.put('/usuario/actualizar-perfil', verifyToken, actualizarPerfil);
+routerUsuarios.patch('/actualizar-perfil', verifyToken, subirAvatarPerfil, actualizarPerfil);
 // Nota: Si usas multer para la imagen, añade el middleware de subida ej: verifyToken, upload.single('avatar'), actualizarAvatar
 routerUsuarios.put('/usuario/actualizar-avatar', verifyToken, actualizarAvatar); 
 

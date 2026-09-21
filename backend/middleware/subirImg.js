@@ -8,15 +8,28 @@ cloudinary.config({
   api_secret: "MThRV65WznH9BLOLrYwFaqLEDME"
 });
 
-// 📦 Configurar almacenamiento con Multer y Cloudinary
-const storage = new CloudinaryStorage({
+// 📦 Configuración para imágenes de productos (Múltiples)
+const storageProductos = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: "img-cdisfruta", // Carpeta en Cloudinary
+    folder: "img-cdisfruta",
     allowed_formats: ["jpg", "png", "jpeg"],
   },
 });
 
-const upload = multer({ storage });
+const uploadProductos = multer({ storage: storageProductos });
+export const subirImg = uploadProductos.array("imagenes", 5);
 
-export const subirImg = upload.array("imagenes", 5);
+
+// 📦 Configuración exclusiva para el Avatar del usuario (Única imagen)
+const storageAvatar = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "avatars-cdisfruta", // Carpeta independiente para orden
+    allowed_formats: ["jpg", "png", "jpeg"],
+    transformation: [{ width: 300, height: 300, crop: "limit" }] // Opcional: optimizar tamaño
+  },
+});
+
+const uploadAvatar = multer({ storage: storageAvatar });
+export const subirAvatarPerfil = uploadAvatar.single("avatar"); // 👈 Espera un campo llamado 'avatar'

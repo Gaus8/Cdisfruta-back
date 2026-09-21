@@ -61,7 +61,9 @@ const validateLogin = async (req, res) => {
       id: user._id,
       nombre: user.nombre,
       email: user.email,
-      rol: user.rol
+      rol: user.rol,
+      telefono: user.telefono, // 👈 Incluir si lo decodificas en el token
+      avatar: user.avatar
     },
     process.env.JWT_TOKEN,
     { expiresIn: '15m' } // 5m = 5 minutos en jsonwebtoken
@@ -81,7 +83,9 @@ const validateLogin = async (req, res) => {
       user: {
         nombre: user.nombre,
         email: user.email,
-        rol: user.rol
+        rol: user.rol,
+        telefono: user.telefono, // 👈 ¡Indispensable para que el frontend lo reciba al loguearse!
+        avatar: user.avatar
       }
     });
 };
@@ -134,31 +138,44 @@ export const verificarCuenta = async (req, res) => {
 export const actualizarPerfil = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { nombre, telefono } = req.body;
+    const { nombre, telefono, avatar } = req.body;
+
+    let avatarFinal = avatar;
+
+    if (req.file) {
+      avatarFinal = req.file.path;
+    }
+
+    const datosActualizar = { nombre, telefono };
+    if (avatarFinal !== undefined) {
+      datosActualizar.avatar = avatarFinal;
+    }
 
     const usuarioActualizado = await User.findByIdAndUpdate(
       userId,
-      { nombre, telefono },
-      { new: true }
-    );
+      datosActualizar,
+      { new: true, runValidators: true }
+    ).select('-password'); 
 
     if (!usuarioActualizado) {
       return res.status(404).json({ status: 'error', message: 'Usuario no encontrado' });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       status: 'success',
       message: 'Perfil actualizado correctamente',
       usuario: {
         nombre: usuarioActualizado.nombre,
         email: usuarioActualizado.email,
         telefono: usuarioActualizado.telefono,
-        avatar: usuarioActualizado.avatar
+        avatar: usuarioActualizado.avatar,
+        rol: usuarioActualizado.rol
       }
     });
+
   } catch (err) {
     console.error('Error al actualizar perfil:', err);
-    res.status(500).json({ status: 'error', message: 'Error en el servidor al actualizar perfil' });
+    return res.status(500).json({ status: 'error', message: 'Error en el servidor al actualizar perfil' });
   }
 };
 
