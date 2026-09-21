@@ -129,9 +129,6 @@ export const verificarCuenta = async (req, res) => {
   }
 };
 
-
-// 2. ACTUALIZACIÓN DE PERFIL Y AVATAR
-
 export const actualizarPerfil = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -188,9 +185,6 @@ export const actualizarAvatar = async (req, res) => {
     res.status(500).json({ status: 'error', message: 'Error al procesar la imagen' });
   }
 };
-
-
-// 3. RECUPERACIÓN DE CONTRASEÑA
 
 export const solicitarRestablecerPassword = async (req, res) => {
   try {
@@ -261,42 +255,53 @@ export const restablecerPasswordConToken = async (req, res) => {
   }
 };
 
-export const cambiarPasswordSeguro = async (req, res) => {
+export const cambiarPasswordDesdeApp = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { passwordActual, nuevaPassword, codigoCorreo } = req.body;
+    const userId = req.user.id; 
+    const { passActual, nuevaPassword } = req.body;
 
+    // 1. Validar que ambos campos estén presentes
+    if (!passActual || !nuevaPassword) {
+      return res.status(400).json({ 
+        status: 'error', 
+        message: 'La contraseña actual y la nueva son obligatorias' 
+      });
+    }
+
+    // 2. Buscar al usuario en MongoDB
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ status: 'error', message: 'Usuario no encontrado' });
+      return res.status(404).json({ 
+        status: 'error', 
+        message: 'Usuario no encontrado' 
+      });
     }
 
-    const checkPassword = await bcrypt.compare(passwordActual, user.password);
-    if (!checkPassword) {
-      return res.status(400).json({ status: 'error', message: 'La contraseña actual es incorrecta' });
+    // 3. Verificar que la contraseña actual sea correcta
+    const esPasswordCorrecta = await bcrypt.compare(passActual, user.password);
+    if (!esPasswordCorrecta) {
+      return res.status(401).json({ 
+        status: 'error', 
+        message: 'La contraseña actual es incorrecta' 
+      });
     }
 
-    if (!user.resetPasswordToken || user.resetPasswordToken !== codigoCorreo) {
-      return res.status(400).json({ status: 'error', message: 'El código de verificación es inválido' });
-    }
-
-    if (user.resetPasswordExpires < Date.now()) {
-      return res.status(400).json({ status: 'error', message: 'El código de verificación ha expirado' });
-    }
-
+    // 4. Encriptar y actualizar la nueva contraseña
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(nuevaPassword, salt);
 
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
     await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       status: 'success',
       message: 'Contraseña actualizada exitosamente'
     });
+
   } catch (err) {
     console.error('Error al cambiar contraseña:', err);
-    res.status(500).json({ status: 'error', message: 'Error en el servidor al cambiar la contraseña' });
+    return res.status(500).json({ 
+      status: 'error', 
+      message: 'Error en el servidor al cambiar la contraseña' 
+    });
   }
 };
