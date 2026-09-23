@@ -135,76 +135,6 @@ export const verificarCuenta = async (req, res) => {
   }
 };
 
-export const actualizarPerfil = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { nombre, telefono, avatar } = req.body;
-
-    let avatarFinal = avatar;
-
-    if (req.file) {
-      avatarFinal = req.file.path;
-    }
-
-    const datosActualizar = { nombre, telefono };
-    if (avatarFinal !== undefined) {
-      datosActualizar.avatar = avatarFinal;
-    }
-
-    const usuarioActualizado = await User.findByIdAndUpdate(
-      userId,
-      datosActualizar,
-      { new: true, runValidators: true }
-    ).select('-password'); 
-
-    if (!usuarioActualizado) {
-      return res.status(404).json({ status: 'error', message: 'Usuario no encontrado' });
-    }
-
-    return res.status(200).json({
-      status: 'success',
-      message: 'Perfil actualizado correctamente',
-      usuario: {
-        nombre: usuarioActualizado.nombre,
-        email: usuarioActualizado.email,
-        telefono: usuarioActualizado.telefono,
-        avatar: usuarioActualizado.avatar,
-        rol: usuarioActualizado.rol
-      }
-    });
-
-  } catch (err) {
-    console.error('Error al actualizar perfil:', err);
-    return res.status(500).json({ status: 'error', message: 'Error en el servidor al actualizar perfil' });
-  }
-};
-
-export const actualizarAvatar = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    if (!req.file) {
-      return res.status(400).json({ status: 'error', message: 'No se ha subido ninguna imagen' });
-    }
-
-    const avatarUrl = req.file.path || req.file.secure_url;
-
-    const usuario = await User.findByIdAndUpdate(
-      userId,
-      { avatar: avatarUrl },
-      { new: true }
-    );
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Avatar actualizado con éxito',
-      avatarUrl: usuario.avatar
-    });
-  } catch (err) {
-    console.error('Error al subir avatar:', err);
-    res.status(500).json({ status: 'error', message: 'Error al procesar la imagen' });
-  }
-};
-
 export const solicitarRestablecerPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -322,5 +252,75 @@ export const cambiarPasswordDesdeApp = async (req, res) => {
       status: 'error',
       message: 'Error en el servidor al cambiar la contraseña'
     });
+  }
+};
+
+export const actualizarPerfil = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { nombre, telefono, avatar } = req.body;
+
+    let avatarFinal = avatar;
+
+    if (req.file) {
+      avatarFinal = req.file.path;
+    }
+
+    const datosActualizar = { nombre, telefono };
+    if (avatarFinal !== undefined) {
+      datosActualizar.avatar = avatarFinal;
+    }
+
+    const usuarioActualizado = await User.findByIdAndUpdate(
+      userId,
+      datosActualizar,
+      { new: true, runValidators: true }
+    ).select('-password'); 
+
+    if (!usuarioActualizado) {
+      return res.status(404).json({ status: 'error', message: 'Usuario no encontrado' });
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Perfil actualizado correctamente',
+      usuario: {
+        nombre: usuarioActualizado.nombre,
+        email: usuarioActualizado.email,
+        telefono: usuarioActualizado.telefono,
+        avatar: usuarioActualizado.avatar,
+        rol: usuarioActualizado.rol
+      }
+    });
+
+  } catch (err) {
+    console.error('Error al actualizar perfil:', err);
+    return res.status(500).json({ status: 'error', message: 'Error en el servidor al actualizar perfil' });
+  }
+};
+
+export const actualizarAvatar = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    if (!req.file) {
+      return res.status(400).json({ status: 'error', message: 'No se ha subido ninguna imagen' });
+    }
+
+    const avatarUrl = req.file.path || req.file.secure_url;
+
+    const usuario = await User.findByIdAndUpdate(
+      userId,
+      { avatar: avatarUrl },
+      { new: true }
+    );
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Avatar actualizado con éxito',
+      avatarUrl: usuario.avatar
+    });
+  } catch (err) {
+    console.error('Error al subir avatar:', err);
+    res.status(500).json({ status: 'error', message: 'Error al procesar la imagen' });
   }
 };
