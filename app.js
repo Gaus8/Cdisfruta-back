@@ -10,6 +10,7 @@ import { routerNotificaciones } from './backend/router/notificacionesRouter.js';
 import { routerUsuarios } from './backend/router/userRoutes.js'; 
 import { routerProductos } from './backend/router/productRoutes.js';
 import routerPedidos from './backend/router/pedidosRoutes.js'; // <-- Importado sin llaves
+import { routerLanding } from './backend/router/landingRoutes.js';
 
 const corsOptions = {
   origin: [
@@ -39,6 +40,7 @@ app.use('/api/auth', routerUsuarios);
 app.use('/api', routerProductos);
 app.use('/api', routerNotificaciones); 
 app.use('/api', routerPedidos); // Registro de las rutas de pedidos
+app.use('/api', routerLanding);
 
 app.get('/', (req, res) => {
   res.send("El servidor de Cdisfruta está funcionando");

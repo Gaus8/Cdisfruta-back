@@ -20,6 +20,23 @@ const storageProductos = new CloudinaryStorage({
 const uploadProductos = multer({ storage: storageProductos });
 export const subirImg = uploadProductos.array("imagenes", 5);
 
+const storagePortada = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "cdisfruta-portada",
+    allowed_formats: ["jpg", "png", "jpeg", "webp"],
+  },
+});
+const uploadPortada = multer({
+  storage: storagePortada,
+  limits: { fileSize: 5 * 1024 * 1024, files: 3 },
+  fileFilter: (_req, file, callback) => {
+    if (["image/jpeg", "image/png", "image/webp"].includes(file.mimetype)) return callback(null, true);
+    callback(new Error("Formato no permitido. Usa JPG, PNG o WebP."));
+  }
+});
+export const subirImagenPortada = uploadPortada.any();
+
 
 // 📦 Configuración exclusiva para el Avatar del usuario (Única imagen)
 const storageAvatar = new CloudinaryStorage({
