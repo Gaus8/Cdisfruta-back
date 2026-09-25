@@ -17,7 +17,14 @@ const storageProductos = new CloudinaryStorage({
   },
 });
 
-const uploadProductos = multer({ storage: storageProductos });
+const uploadProductos = multer({
+  storage: storageProductos,
+  limits: { fileSize: 5 * 1024 * 1024, files: 5 },
+  fileFilter: (_req, file, callback) => {
+    if (["image/jpeg", "image/png"].includes(file.mimetype)) return callback(null, true);
+    callback(new Error("Formato no permitido. Usa JPG o PNG."));
+  }
+});
 export const subirImg = uploadProductos.array("imagenes", 5);
 
 const storagePortada = new CloudinaryStorage({

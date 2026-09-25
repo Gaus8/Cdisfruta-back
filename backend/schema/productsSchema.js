@@ -8,12 +8,14 @@ const productoSchema = new mongoose.Schema({
   },
   descripcion: {
     type: String,
-    required: true,
+    required: false,
+    default: '',
     trim: true
   },
   precio: {
     type: Number,
-    required: true,
+    required: false,
+    default: 0,
     min: 0
   },
   categoria: {
@@ -25,6 +27,13 @@ const productoSchema = new mongoose.Schema({
     required: true,
     min: 0,
     default: 0
+  },
+  codigoBarras: {
+    type: String,
+    trim: true,
+    default: undefined,
+    unique: true,
+    sparse: true
   },
   imagen: {
     type: String, // Imagen principal de respaldo
@@ -39,6 +48,10 @@ const productoSchema = new mongoose.Schema({
     default: Date.now
   },
   activo: {
+    type: Boolean,
+    default: true
+  },
+  publicarEnTienda: {
     type: Boolean,
     default: true
   }
