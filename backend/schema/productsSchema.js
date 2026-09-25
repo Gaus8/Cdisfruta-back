@@ -54,6 +54,10 @@ const productoSchema = new mongoose.Schema({
   publicarEnTienda: {
     type: Boolean,
     default: true
+  },
+  enCatalogo: {
+    type: Boolean,
+    default: true
   }
 });
 

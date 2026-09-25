@@ -45,6 +45,7 @@ export const registerProducts = async (req, res) => {
       categoria,
       stock: Number(stock),
       publicarEnTienda: true,
+      enCatalogo: true,
       imagen: imagenesUrls[0],
       imagenes: imagenesUrls
     };
@@ -110,9 +111,11 @@ export const updateProduct = async (req, res) => {
         descripcion, 
         precio: Number(precio), 
         categoria, 
-        stock: Number(stock), 
-        imagen: imagenPrincipal,
-        imagenes: imagenesFinales 
+      stock: Number(stock),
+      imagen: imagenPrincipal,
+      imagenes: imagenesFinales,
+      publicarEnTienda: true,
+      enCatalogo: true
       },
       { new: true } 
     );
@@ -178,33 +181,52 @@ export const getInventory = async (_req, res) => {
   }
 };
 
+export const getAdminCatalog = async (_req, res) => {
+  try {
+    const products = await Producto.find({ activo: true, enCatalogo: { $ne: false } }).sort({ fechaCreacion: -1 });
+    res.status(200).json(products);
+  } catch (error) {
+    res.status(500).json({ message: 'No se pudo cargar el catálogo', error: error.message });
+  }
+};
+
 export const createInventoryProduct = async (req, res) => {
   try {
-    const { nombre, descripcion, precio, categoria, stock, codigoBarras } = req.body;
-    const publicarEnTienda = String(req.body.publicarEnTienda) === 'true';
-    if (!nombre?.trim() || stock === undefined || (publicarEnTienda && (!descripcion?.trim() || !categoria?.trim() || precio === undefined))) {
-      return res.status(400).json({ message: publicarEnTienda ? 'Completa los datos requeridos para publicar en la tienda.' : 'Completa el nombre y la cantidad del artículo.' });
+    const { nombre, categoria, stock, codigoBarras } = req.body;
+    if (!nombre?.trim() || !stock?.toString().trim() || !categoria?.trim()) {
+      return res.status(400).json({ message: 'Completa el nombre, tipo de artículo y cantidad.' });
     }
     if (!req.files?.length) return res.status(400).json({ message: 'Selecciona una foto del producto.' });
     const cantidad = Number(stock);
-    const valor = Number(precio || 0);
-    if (!Number.isInteger(cantidad) || cantidad < 0 || !Number.isFinite(valor) || valor < 0) {
-      return res.status(400).json({ message: 'La cantidad debe ser un entero y el precio debe ser válido.' });
-    }
+    if (!Number.isInteger(cantidad) || cantidad < 0) return res.status(400).json({ message: 'La cantidad debe ser un entero igual o mayor que cero.' });
     const fotos = req.files.map((file) => file.path);
     const product = await Producto.create({
-      nombre: nombre.trim(), descripcion: descripcion?.trim() || '', categoria: categoria?.trim() || 'Materia prima',
-      precio: valor, stock: cantidad, codigoBarras: codigoBarras?.trim() || undefined,
-      imagen: fotos[0], imagenes: fotos, publicarEnTienda
+      nombre: nombre.trim(), descripcion: '', categoria: categoria.trim(),
+      precio: 0, stock: cantidad, codigoBarras: codigoBarras?.trim() || undefined,
+      imagen: fotos[0], imagenes: fotos, publicarEnTienda: false, enCatalogo: false
     });
-    await notificarInventario(
-      `${publicarEnTienda ? 'Producto para tienda' : 'Insumo interno'} añadido: ${product.nombre} (${product.stock} unidades)`,
-      'creacion_inventario'
-    );
+    await notificarInventario(`Artículo añadido al inventario: ${product.nombre} (${product.stock} unidades).`, 'creacion_inventario');
     res.status(201).json({ product });
   } catch (error) {
     if (error.code === 11000) return res.status(409).json({ message: 'Ese código de barras ya está asignado a otro producto.' });
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const exportInventoryToCatalog = async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body.ids) ? [...new Set(req.body.ids)] : [];
+    if (!ids.length || ids.some((id) => !mongoose.isValidObjectId(id))) {
+      return res.status(400).json({ message: 'Selecciona al menos un artículo válido para exportar.' });
+    }
+    const products = await Producto.find({ _id: { $in: ids }, activo: true, enCatalogo: false });
+    if (products.length !== ids.length) return res.status(400).json({ message: 'Algunos artículos seleccionados ya no están disponibles para exportar.' });
+    await Producto.updateMany({ _id: { $in: ids }, activo: true, enCatalogo: false }, { $set: { enCatalogo: true, publicarEnTienda: false } });
+    const exportedProducts = await Producto.find({ _id: { $in: ids }, activo: true });
+    await notificarInventario(`${exportedProducts.length} artículo(s) se exportaron al catálogo como borrador para completar sus datos comerciales.`, 'exportacion_catalogo');
+    res.status(200).json({ products: exportedProducts });
+  } catch (error) {
+    res.status(500).json({ message: 'No se pudieron exportar los artículos al catálogo.', error: error.message });
   }
 };
 
