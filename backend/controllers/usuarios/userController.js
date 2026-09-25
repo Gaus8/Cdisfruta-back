@@ -324,3 +324,37 @@ export const actualizarAvatar = async (req, res) => {
     res.status(500).json({ status: 'error', message: 'Error al procesar la imagen' });
   }
 };
+
+const esAdmin = (req) => req.user?.rol === 'admin';
+
+export const obtenerPreferenciasAdmin = async (req, res) => {
+  if (!esAdmin(req)) return res.status(403).json({ message: 'Solo administración puede consultar estas preferencias.' });
+  try {
+    const user = await User.findById(req.user.id).select('preferenciasAdmin');
+    if (!user) return res.status(404).json({ message: 'No se encontró la cuenta administradora.' });
+    return res.status(200).json(user.preferenciasAdmin || {});
+  } catch (error) {
+    return res.status(500).json({ message: 'No se pudieron cargar las preferencias.' });
+  }
+};
+
+export const actualizarPreferenciasAdmin = async (req, res) => {
+  if (!esAdmin(req)) return res.status(403).json({ message: 'Solo administración puede cambiar estas preferencias.' });
+  try {
+    const { notificarPedidos, notificarInventario, notificarCatalogo, umbralStockCritico } = req.body;
+    const threshold = Number(umbralStockCritico);
+    if (![notificarPedidos, notificarInventario, notificarCatalogo].every((value) => typeof value === 'boolean')) {
+      return res.status(400).json({ message: 'Indica el estado de cada preferencia de notificaciones.' });
+    }
+    if (!Number.isInteger(threshold) || threshold < 0 || threshold > 10000) {
+      return res.status(400).json({ message: 'El umbral de stock debe ser un entero entre 0 y 10.000.' });
+    }
+    const user = await User.findByIdAndUpdate(req.user.id, {
+      $set: { preferenciasAdmin: { notificarPedidos, notificarInventario, notificarCatalogo, umbralStockCritico: threshold } }
+    }, { new: true, runValidators: true }).select('preferenciasAdmin');
+    if (!user) return res.status(404).json({ message: 'No se encontró la cuenta administradora.' });
+    return res.status(200).json({ message: 'Preferencias guardadas.', preferencias: user.preferenciasAdmin });
+  } catch (error) {
+    return res.status(500).json({ message: 'No se pudieron guardar las preferencias.' });
+  }
+};

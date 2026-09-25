@@ -7,6 +7,8 @@ import {
   solicitarRestablecerPassword,
   restablecerPasswordConToken,
   cambiarPasswordDesdeApp, 
+  obtenerPreferenciasAdmin,
+  actualizarPreferenciasAdmin,
 } from '../controllers/usuarios/userController.js';
 import { verifyToken } from '../middleware/getToken.js';
 import { registrarUsuario } from '../controllers/usuarios/registrarUsuario.js';
@@ -30,6 +32,8 @@ routerUsuarios.post('/reset-password', restablecerPasswordConToken);
 routerUsuarios.patch('/cambiar-password', verifyToken, cambiarPasswordDesdeApp);
 
 routerUsuarios.patch('/actualizar-perfil', verifyToken, subirAvatarPerfil, actualizarPerfil);
+routerUsuarios.get('/admin/configuracion', verifyToken, obtenerPreferenciasAdmin);
+routerUsuarios.patch('/admin/configuracion', verifyToken, actualizarPreferenciasAdmin);
 // Nota: Si usas multer para la imagen, añade el middleware de subida ej: verifyToken, upload.single('avatar'), actualizarAvatar
 routerUsuarios.put('/usuario/actualizar-avatar', verifyToken, actualizarAvatar); 
 
