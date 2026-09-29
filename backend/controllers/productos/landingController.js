@@ -37,7 +37,7 @@ export const updateLandingSlides = async (req, res) => {
       return values;
     });
     const result = await Promise.all(valuesToSave.map((values, index) => LandingSlide.findOneAndUpdate(
-      { orden: index }, values, { new: true, upsert: true, runValidators: true }
+      { orden: index }, values, { returnDocument: 'after', upsert: true, runValidators: true }
     )));
     res.status(200).json(result);
   } catch (error) {

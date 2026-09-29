@@ -117,7 +117,7 @@ export const updateProduct = async (req, res) => {
       publicarEnTienda: true,
       enCatalogo: true
       },
-      { new: true } 
+      { returnDocument: 'after' }
     );
 
     await Notificacion.create({ 
@@ -241,12 +241,12 @@ export const updateInventoryStock = async (req, res) => {
       if (!Number.isInteger(change) || change === 0) return res.status(400).json({ message: 'Indica un ajuste entero distinto de cero.' });
       product = await Producto.findOneAndUpdate(
         { _id: id, activo: true, stock: { $gte: change < 0 ? Math.abs(change) : 0 } },
-        { $inc: { stock: change } }, { new: true }
+        { $inc: { stock: change } }, { returnDocument: 'after' }
       );
     } else {
       const quantity = Number(stock);
       if (!Number.isInteger(quantity) || quantity < 0) return res.status(400).json({ message: 'La cantidad debe ser un entero igual o mayor que cero.' });
-      product = await Producto.findOneAndUpdate({ _id: id, activo: true }, { $set: { stock: quantity } }, { new: true });
+      product = await Producto.findOneAndUpdate({ _id: id, activo: true }, { $set: { stock: quantity } }, { returnDocument: 'after' });
     }
     if (!product) return res.status(404).json({ message: 'Producto no encontrado o el ajuste supera las existencias.' });
     await notificarInventario(`Stock actualizado: ${product.nombre}. Ahora hay ${product.stock} unidades.`, 'ajuste_stock');
@@ -264,7 +264,7 @@ export const updateInventoryStockByBarcode = async (req, res) => {
     if (!codigo || !Number.isInteger(change) || change === 0) return res.status(400).json({ message: 'Código o ajuste inválido.' });
     const product = await Producto.findOneAndUpdate(
       { codigoBarras: codigo, activo: true, stock: { $gte: change < 0 ? Math.abs(change) : 0 } },
-      { $inc: { stock: change } }, { new: true }
+      { $inc: { stock: change } }, { returnDocument: 'after' }
     );
     if (!product) {
       const exists = await Producto.exists({ codigoBarras: codigo, activo: true });
@@ -294,7 +294,7 @@ export const deleteInventoryProduct = async (req, res) => {
     const product = await Producto.findOneAndUpdate(
       { _id: req.params.id, activo: true },
       { $set: { activo: false } },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!product) return res.status(404).json({ message: 'El artículo no existe o ya fue retirado.' });
     await notificarInventario(`Artículo retirado del inventario: ${product.nombre}.`, 'eliminacion_inventario');
@@ -310,7 +310,7 @@ export const assignInventoryBarcode = async (req, res) => {
     const codigoBarras = req.body.codigoBarras?.trim();
     if (!mongoose.isValidObjectId(id)) return res.status(400).json({ message: 'Producto inválido.' });
     const change = codigoBarras ? { $set: { codigoBarras } } : { $unset: { codigoBarras: 1 } };
-    const product = await Producto.findOneAndUpdate({ _id: id, activo: true }, change, { new: true, runValidators: true });
+    const product = await Producto.findOneAndUpdate({ _id: id, activo: true }, change, { returnDocument: 'after', runValidators: true });
     if (!product) return res.status(404).json({ message: 'Producto no encontrado.' });
     res.status(200).json({ product });
   } catch (error) {

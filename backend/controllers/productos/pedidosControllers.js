@@ -120,7 +120,7 @@ export const actualizarEstadoPedido = async (req, res) => {
     const pedidoActualizado = await Pedido.findByIdAndUpdate(
       id,
       { estado },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!pedidoActualizado) {
@@ -154,7 +154,7 @@ export const reclamarPedidoInvitado = async (req, res) => {
       guestClaimExpiresAt: { $gt: new Date() },
       usuario: null,
       'datosEnvio.correo': String(account.email || '').trim().toLowerCase()
-    }, { $set: { usuario: account._id }, $unset: { guestClaimTokenHash: 1, guestClaimExpiresAt: 1 } }, { new: true }).select('_id');
+    }, { $set: { usuario: account._id }, $unset: { guestClaimTokenHash: 1, guestClaimExpiresAt: 1 } }, { returnDocument: 'after' }).select('_id');
     if (!order) return res.status(404).json({ status: 'error', message: 'El pedido expiró, ya fue asociado o no pertenece al correo de esta cuenta.' });
     return res.status(200).json({ status: 'success', message: 'El pedido quedó asociado a tu cuenta.', pedidoVinculado: String(order._id) });
   } catch (error) {

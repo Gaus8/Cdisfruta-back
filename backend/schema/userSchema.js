@@ -49,6 +49,7 @@ const userSchema = new mongoose.Schema({
     default: false
   },
   codigo_verificacion: String,
+  verificationEmailLastSentAt: { type: Date, default: null },
   terminosAceptados: {
     type: Boolean,
     required: true

@@ -274,7 +274,7 @@ export const actualizarPerfil = async (req, res) => {
     const usuarioActualizado = await User.findByIdAndUpdate(
       userId,
       datosActualizar,
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     ).select('-password'); 
 
     if (!usuarioActualizado) {
@@ -311,7 +311,7 @@ export const actualizarAvatar = async (req, res) => {
     const usuario = await User.findByIdAndUpdate(
       userId,
       { avatar: avatarUrl },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     res.status(200).json({
@@ -351,7 +351,7 @@ export const actualizarPreferenciasAdmin = async (req, res) => {
     }
     const user = await User.findByIdAndUpdate(req.user.id, {
       $set: { preferenciasAdmin: { notificarPedidos, notificarInventario, notificarCatalogo, umbralStockCritico: threshold } }
-    }, { new: true, runValidators: true }).select('preferenciasAdmin');
+    }, { returnDocument: 'after', runValidators: true }).select('preferenciasAdmin');
     if (!user) return res.status(404).json({ message: 'No se encontró la cuenta administradora.' });
     return res.status(200).json({ message: 'Preferencias guardadas.', preferencias: user.preferenciasAdmin });
   } catch (error) {

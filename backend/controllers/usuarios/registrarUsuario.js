@@ -122,6 +122,7 @@ export const registrarUsuarioPostCompra = async (req, res) => {
       password: hashedPassword,
       verificado: false,
       codigo_verificacion: codigoSeisDigitos,
+      verificationEmailLastSentAt: new Date(),
       terminosAceptados: true,
       fechaAceptacionTerminos: new Date()
     });
@@ -132,7 +133,7 @@ export const registrarUsuarioPostCompra = async (req, res) => {
       guestClaimExpiresAt: { $gt: new Date() },
       usuario: null,
       'datosEnvio.correo': email
-    }, { $set: { usuario: newUser._id }, $unset: { guestClaimTokenHash: 1, guestClaimExpiresAt: 1 } }, { new: true }).select('_id');
+    }, { $set: { usuario: newUser._id }, $unset: { guestClaimTokenHash: 1, guestClaimExpiresAt: 1 } }, { returnDocument: 'after' }).select('_id');
 
     if (!linkedOrder) {
       await User.deleteOne({ _id: newUser._id });
@@ -147,13 +148,14 @@ export const registrarUsuarioPostCompra = async (req, res) => {
         responseCode: emailError.responseCode,
         message: emailError.message
       });
-      await Promise.all([
-        User.deleteOne({ _id: newUser._id }),
-        Pedido.updateOne({ _id: linkedOrder._id, usuario: newUser._id }, {
-          $set: { usuario: null, guestClaimTokenHash: claimHash, guestClaimExpiresAt: pedido.guestClaimExpiresAt }
-        })
-      ]);
-      return res.status(500).json({ status: 'error', message: 'No se pudo enviar el correo de verificación. El pedido sigue sin cambios; inténtalo de nuevo.' });
+      return res.status(201).json({
+        status: 'success',
+        message: 'La cuenta y el pedido quedaron vinculados. El correo de verificación no se pudo enviar ahora; podrás solicitarlo de nuevo más tarde.',
+        user: { name: newUser.nombre, email: newUser.email },
+        pedidoVinculado: String(linkedOrder._id),
+        requiereVerificacion: true,
+        correoEnviado: false
+      });
     }
 
     return res.status(201).json({
@@ -161,12 +163,52 @@ export const registrarUsuarioPostCompra = async (req, res) => {
       message: 'Cuenta creada y pedido asociado. Verifica el correo para activar tu acceso.',
       user: { name: newUser.nombre, email: newUser.email },
       pedidoVinculado: String(linkedOrder._id),
-      requiereVerificacion: true
+      requiereVerificacion: true,
+      correoEnviado: true
     });
   } catch (error) {
     if (newUser?._id) await User.deleteOne({ _id: newUser._id }).catch(() => {});
     if (error.code === 11000) return res.status(409).json({ status: 'error', message: 'Este correo ya tiene una cuenta. Inicia sesión para consultar tus pedidos.' });
     console.error('Error al crear cuenta posterior a la compra:', error);
     return res.status(500).json({ status: 'error', message: 'No se pudo completar el registro posterior a la compra.' });
+  }
+};
+
+export const reenviarVerificacionPostCompra = async (req, res) => {
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ status: 'error', message: 'Ingresa un correo válido.' });
+  }
+
+  try {
+    const user = await User.findOne({ email, verificado: false });
+    if (!user) {
+      return res.status(200).json({ status: 'success', message: 'Si existe una cuenta pendiente de verificación, enviaremos un código.' });
+    }
+
+    const cooldownMs = 60 * 1000;
+    const lastSentAt = user.verificationEmailLastSentAt?.getTime?.() || 0;
+    const remainingSeconds = Math.ceil((lastSentAt + cooldownMs - Date.now()) / 1000);
+    if (remainingSeconds > 0) {
+      return res.status(429).json({ status: 'error', message: `Espera ${remainingSeconds} segundos antes de volver a solicitar el código.` });
+    }
+
+    user.verificationEmailLastSentAt = new Date();
+    await user.save();
+    try {
+      await enviarCorreoVerificacion(user, user.codigo_verificacion);
+    } catch (emailError) {
+      console.error('No se pudo reenviar el correo de verificación post-compra:', {
+        code: emailError.code,
+        responseCode: emailError.responseCode,
+        message: emailError.message
+      });
+      return res.status(503).json({ status: 'error', message: 'El servicio de correo no está disponible ahora. Inténtalo de nuevo más tarde.' });
+    }
+
+    return res.status(200).json({ status: 'success', message: 'Enviamos un nuevo correo con tu código de verificación.' });
+  } catch (error) {
+    console.error('Error al reenviar verificación post-compra:', error.message);
+    return res.status(500).json({ status: 'error', message: 'No se pudo procesar la solicitud de verificación.' });
   }
 };

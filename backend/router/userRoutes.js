@@ -11,7 +11,7 @@ import {
   actualizarPreferenciasAdmin,
 } from '../controllers/usuarios/userController.js';
 import { verifyToken } from '../middleware/getToken.js';
-import { registrarUsuario, registrarUsuarioPostCompra } from '../controllers/usuarios/registrarUsuario.js';
+import { registrarUsuario, registrarUsuarioPostCompra, reenviarVerificacionPostCompra } from '../controllers/usuarios/registrarUsuario.js';
 import { googleLogin } from '../controllers/usuarios/registrarUsuariosGoogle.js';
 import { subirAvatarPerfil } from '../middleware/subirImg.js';
 import { verificarTokenController } from '../models/authUser.js';
@@ -24,6 +24,7 @@ export const routerUsuarios = express.Router();
 
 routerUsuarios.post('/registro', registrarUsuario);
 routerUsuarios.post('/registro-post-compra', registrarUsuarioPostCompra);
+routerUsuarios.post('/reenviar-verificacion-post-compra', reenviarVerificacionPostCompra);
 routerUsuarios.post('/login', loginUser);
 routerUsuarios.post('/verificar-cuenta', verificarCuenta);
 // Reemplazas tu función en línea por el controlador que consulta MongoDB
