@@ -9,7 +9,7 @@ const registeredAt = (user) => user.createdAt || user._id.getTimestamp();
 
 const requireAdmin = (req, res) => {
   if (req.user?.rol === 'admin') return true;
-  res.status(403).json({ message: 'Solo administración puede gestionar usuarios.' });
+  res.status(403).json({ message: 'Solo administración puede acceder a esta información.' });
   return false;
 };
 
@@ -17,7 +17,7 @@ export const listarUsuariosAdmin = async (req, res) => {
   if (!requireAdmin(req, res)) return;
   try {
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-    const limit = Math.min(50, Math.max(1, Number.parseInt(req.query.limit, 10) || 10));
+    const limit = 10;
     const search = String(req.query.search || '').trim().slice(0, 120);
     const status = String(req.query.status || 'all');
     const filter = { rol: 'user' };
@@ -142,6 +142,86 @@ export const eliminarUsuarioAdmin = async (req, res) => {
   }
 };
 
+export const eliminarUsuariosAdmin = async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  const ids = req.body?.ids;
+  if (!Array.isArray(ids) || ids.length < 1 || ids.length > 10) {
+    return res.status(400).json({ message: 'Selecciona entre 1 y 10 cuentas de clientes.' });
+  }
+  const uniqueIds = [...new Set(ids.map(String))];
+  if (uniqueIds.length !== ids.length || uniqueIds.some((id) => !mongoose.isValidObjectId(id))) {
+    return res.status(400).json({ message: 'La selección contiene identificadores inválidos o repetidos.' });
+  }
+  if (uniqueIds.some((id) => id === String(req.user?.id))) {
+    return res.status(403).json({ message: 'No puedes eliminar la cuenta que estás utilizando.' });
+  }
+  try {
+    const users = await User.find({ _id: { $in: uniqueIds }, rol: 'user' }).select('_id');
+    if (users.length !== uniqueIds.length) return res.status(404).json({ message: 'Una o más cuentas seleccionadas ya no existen o no son cuentas de cliente.' });
+    const userIds = users.map((user) => user._id);
+    await UserActivity.deleteMany({ usuario: { $in: userIds } });
+    const result = await User.deleteMany({ _id: { $in: userIds }, rol: 'user' });
+    if (result.deletedCount !== userIds.length) return res.status(409).json({ message: 'La selección cambió mientras se procesaba. Actualiza el listado e inténtalo de nuevo.' });
+    return res.status(200).json({ message: 'Las cuentas seleccionadas fueron eliminadas.', eliminados: result.deletedCount });
+  } catch (error) {
+    console.error('Error al eliminar usuarios en lote:', error);
+    return res.status(500).json({ message: 'No se pudieron eliminar las cuentas seleccionadas.' });
+  }
+};
+
+export const obtenerAnaliticaProductosAdmin = async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const confirmedStates = ['Comprobado', 'Enviado', 'Entregado'];
+    const [catalog, orderMetrics, visitMetrics, interestMetrics] = await Promise.all([
+      Producto.find({ activo: true, publicarEnTienda: { $ne: false } }).select('nombre categoria imagen precio').lean(),
+      Pedido.aggregate([
+        { $match: { estado: { $ne: 'Cancelado' } } },
+        { $unwind: '$productos' },
+        { $group: {
+          _id: { $ifNull: ['$productos.productoId', '$productos.nombre'] },
+          productoId: { $first: '$productos.productoId' },
+          nombre: { $first: '$productos.nombre' },
+          pedidos: { $sum: 1 },
+          unidades: { $sum: { $ifNull: ['$productos.cantidad', { $ifNull: ['$productos.quantity', 0] }] } },
+          ingresos: { $sum: { $cond: [{ $in: ['$estado', confirmedStates] }, { $multiply: [{ $ifNull: ['$productos.precio', 0] }, { $ifNull: ['$productos.cantidad', { $ifNull: ['$productos.quantity', 0] }] }] }, 0] } }
+        } }
+      ]),
+      UserActivity.aggregate([
+        { $match: { tipo: 'product_view', producto: { $ne: null } } },
+        { $group: { _id: '$producto', nombre: { $first: '$nombreProducto' }, visitas: { $sum: 1 }, visitantes: { $addToSet: '$usuario' }, ultimaVisita: { $max: '$fecha' } } },
+        { $project: { nombre: 1, visitas: 1, ultimaVisita: 1, visitantes: { $size: '$visitantes' } } }
+      ]),
+      UserActivity.aggregate([
+        { $match: { tipo: 'form_attempt', producto: { $ne: null } } },
+        { $group: { _id: '$producto', nombre: { $first: '$nombreProducto' }, intentosFormulario: { $sum: 1 }, intentosInteres: { $sum: { $cond: [{ $eq: ['$tipoFormulario', 'product_interest'] }, 1, 0] } }, usuariosInteres: { $addToSet: '$usuario' } } },
+        { $project: { nombre: 1, intentosFormulario: 1, intentosInteres: 1, usuariosInteres: { $size: '$usuariosInteres' } } }
+      ])
+    ]);
+    const metricsByProduct = new Map();
+    const getMetrics = (id, name = 'Producto') => {
+      const key = String(id || name);
+      if (!metricsByProduct.has(key)) metricsByProduct.set(key, { productoId: id ? String(id) : null, nombre: name, categoria: '', imagen: '', precio: 0, pedidos: 0, unidades: 0, ingresos: 0, visitas: 0, visitantes: 0, intentosFormulario: 0, intentosInteres: 0, usuariosInteres: 0, ultimaVisita: null });
+      return metricsByProduct.get(key);
+    };
+    catalog.forEach((product) => Object.assign(getMetrics(product._id, product.nombre), { categoria: product.categoria || '', imagen: product.imagen || '', precio: Number(product.precio || 0) }));
+    orderMetrics.forEach((metric) => Object.assign(getMetrics(metric.productoId, metric.nombre), { pedidos: metric.pedidos, unidades: metric.unidades, ingresos: metric.ingresos }));
+    visitMetrics.forEach((metric) => Object.assign(getMetrics(metric._id, metric.nombre), { visitas: metric.visitas, visitantes: metric.visitantes, ultimaVisita: metric.ultimaVisita }));
+    interestMetrics.forEach((metric) => Object.assign(getMetrics(metric._id, metric.nombre), { intentosFormulario: metric.intentosFormulario, intentosInteres: metric.intentosInteres, usuariosInteres: metric.usuariosInteres }));
+    const productos = [...metricsByProduct.values()].sort((a, b) => b.pedidos - a.pedidos || b.visitas - a.visitas || b.intentosInteres - a.intentosInteres);
+    return res.status(200).json({ productos, resumen: {
+      productosAnalizados: productos.length,
+      unidadesVendidas: productos.reduce((sum, product) => sum + product.unidades, 0),
+      visitasRegistradas: productos.reduce((sum, product) => sum + product.visitas, 0),
+      intentosFormulario: productos.reduce((sum, product) => sum + product.intentosFormulario, 0),
+      intentosInteres: productos.reduce((sum, product) => sum + product.intentosInteres, 0)
+    } });
+  } catch (error) {
+    console.error('Error al consultar analítica de productos:', error);
+    return res.status(500).json({ message: 'No se pudo cargar la analítica de productos.' });
+  }
+};
+
 export const registrarActividadUsuario = async (req, res) => {
   if (!req.user?.id || req.user.rol !== 'user') return res.status(403).json({ message: 'Esta actividad solo puede registrarse para una cuenta de cliente.' });
   const { tipo, productoId, tipoFormulario } = req.body || {};
@@ -153,13 +233,22 @@ export const registrarActividadUsuario = async (req, res) => {
     if (recentCount >= 120) return res.status(429).json({ message: 'Se alcanzó el límite temporal de registro de actividad.' });
     if (tipo === 'product_view') {
       if (!mongoose.isValidObjectId(productoId)) return res.status(400).json({ message: 'Se requiere un producto válido para registrar la visita.' });
-      const product = await Producto.findOne({ _id: productoId, activo: true }).select('nombre');
+      const product = await Producto.findOne({ _id: productoId, activo: true, publicarEnTienda: { $ne: false } }).select('nombre');
       if (!product) return res.status(404).json({ message: 'No se encontró el producto.' });
       await UserActivity.create({ usuario: req.user.id, tipo, producto: product._id, nombreProducto: product.nombre });
       return res.status(201).json({ registrado: true });
     }
     if (tipo === 'form_attempt' && ['cart', 'quote', 'product_interest'].includes(tipoFormulario)) {
-      await UserActivity.create({ usuario: req.user.id, tipo, tipoFormulario });
+      let productData = {};
+      if (productoId) {
+        if (!mongoose.isValidObjectId(productoId)) return res.status(400).json({ message: 'El producto asociado al formulario no es válido.' });
+        const product = await Producto.findOne({ _id: productoId, activo: true, publicarEnTienda: { $ne: false } }).select('nombre');
+        if (!product) return res.status(404).json({ message: 'No se encontró el producto asociado al formulario.' });
+        productData = { producto: product._id, nombreProducto: product.nombre };
+      } else if (tipoFormulario === 'product_interest') {
+        return res.status(400).json({ message: 'El interés debe estar asociado a un producto válido.' });
+      }
+      await UserActivity.create({ usuario: req.user.id, tipo, tipoFormulario, ...productData });
       return res.status(201).json({ registrado: true });
     }
     return res.status(400).json({ message: 'El tipo de actividad no es compatible.' });

@@ -15,7 +15,7 @@ import { registrarUsuario } from '../controllers/usuarios/registrarUsuario.js';
 import { googleLogin } from '../controllers/usuarios/registrarUsuariosGoogle.js';
 import { subirAvatarPerfil } from '../middleware/subirImg.js';
 import { verificarTokenController } from '../models/authUser.js';
-import { eliminarUsuarioAdmin, listarUsuariosAdmin, obtenerActividadUsuarioAdmin, registrarActividadUsuario } from '../controllers/usuarios/adminUsersController.js';
+import { eliminarUsuarioAdmin, eliminarUsuariosAdmin, listarUsuariosAdmin, obtenerActividadUsuarioAdmin, obtenerAnaliticaProductosAdmin, registrarActividadUsuario } from '../controllers/usuarios/adminUsersController.js';
 
 // Si usas multer para manejar la subida de imágenes a Cloudinary:
 // import upload from '../middleware/uploadMiddleware.js'; 
@@ -36,8 +36,10 @@ routerUsuarios.patch('/actualizar-perfil', verifyToken, subirAvatarPerfil, actua
 routerUsuarios.get('/admin/configuracion', verifyToken, obtenerPreferenciasAdmin);
 routerUsuarios.patch('/admin/configuracion', verifyToken, actualizarPreferenciasAdmin);
 routerUsuarios.get('/admin/usuarios', verifyToken, listarUsuariosAdmin);
+routerUsuarios.delete('/admin/usuarios', verifyToken, eliminarUsuariosAdmin);
 routerUsuarios.get('/admin/usuarios/:id/actividad', verifyToken, obtenerActividadUsuarioAdmin);
 routerUsuarios.delete('/admin/usuarios/:id', verifyToken, eliminarUsuarioAdmin);
+routerUsuarios.get('/admin/analitica-productos', verifyToken, obtenerAnaliticaProductosAdmin);
 routerUsuarios.post('/actividad', verifyToken, registrarActividadUsuario);
 // Nota: Si usas multer para la imagen, añade el middleware de subida ej: verifyToken, upload.single('avatar'), actualizarAvatar
 routerUsuarios.put('/usuario/actualizar-avatar', verifyToken, actualizarAvatar); 
