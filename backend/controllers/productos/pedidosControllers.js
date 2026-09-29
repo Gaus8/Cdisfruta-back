@@ -5,12 +5,32 @@ import mongoose from 'mongoose';
 import Producto from '../../schema/productsSchema.js';
 import User from '../../schema/userSchema.js';
 
+const mapWompiStatus = (status) => ({
+  PENDING: 'PENDIENTE', APPROVED: 'APPROVED', DECLINED: 'DECLINED', ERROR: 'ERROR', VOIDED: 'VOIDED'
+}[status] || null);
+
+const applyWompiTransaction = async (transaction) => {
+  const paymentStatus = mapWompiStatus(transaction?.status);
+  if (!paymentStatus || transaction.currency !== 'COP') return null;
+  const order = await Pedido.findOne({ referenciaPago: transaction.reference });
+  if (!order || order.metodoPago !== transaction.payment_method_type || Math.round(order.total * 100) !== Number(transaction.amount_in_cents)) return null;
+  if (order.estadoPago !== 'PENDIENTE' && paymentStatus === 'PENDIENTE') return order;
+  const update = { estadoPago: paymentStatus, idTransaccionWompi: String(transaction.id || '') };
+  if (paymentStatus === 'APPROVED' && order.estado === 'Pendiente') update.estado = 'Comprobado';
+  return Pedido.findByIdAndUpdate(order._id, { $set: update }, { returnDocument: 'after' });
+};
+
 // 1. Crear un nuevo pedido (al finalizar compra)
 export const crearPedido = async (req, res) => {
   try {
     // La identidad autenticada nunca se toma del cuerpo enviado por el navegador.
     const usuarioId = req.user?.id || null;
     const { productos, datosEnvio } = req.body;
+    const metodoPago = ['Contraentrega', 'NEQUI', 'CARD'].includes(req.body.metodoPago) ? req.body.metodoPago : 'Contraentrega';
+    const digital = metodoPago !== 'Contraentrega';
+    if (digital && (!process.env.WOMPI_PUBLIC_KEY || !process.env.WOMPI_INTEGRITY_SECRET)) {
+      return res.status(503).json({ status: 'error', message: 'El pago digital no está configurado todavía. Selecciona pago contra entrega o inténtalo más tarde.' });
+    }
 
     if (!Array.isArray(productos) || productos.length === 0 || productos.length > 50) {
       return res.status(400).json({ status: 'error', message: 'El carrito está vacío' });
@@ -54,12 +74,17 @@ export const crearPedido = async (req, res) => {
     const guestClaimToken = usuarioId ? null : crypto.randomBytes(32).toString('base64url');
     const guestClaimTokenHash = guestClaimToken ? crypto.createHash('sha256').update(guestClaimToken).digest('hex') : undefined;
 
+    const referenciaPago = digital ? `CDIS${Date.now()}${crypto.randomBytes(5).toString('hex').toUpperCase()}` : undefined;
+    const amountInCents = Math.round(totalCalculado * 100);
+    const signatureIntegrity = digital ? crypto.createHash('sha256').update(`${referenciaPago}${amountInCents}COP${process.env.WOMPI_INTEGRITY_SECRET}`).digest('hex') : undefined;
     const nuevoPedido = await Pedido.create({
       usuario: usuarioId,
       productos: productosValidados,
       total: totalCalculado,
       datosEnvio: { ...datosEnvio, correo: email },
       estado: 'Pendiente',
+      envio: 'Gratis', metodoPago, estadoPago: digital ? 'PENDIENTE' : 'No requerido',
+      ...(referenciaPago ? { referenciaPago } : {}),
       ...(guestClaimTokenHash ? { guestClaimTokenHash, guestClaimExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) } : {})
     });
 
@@ -73,7 +98,21 @@ export const crearPedido = async (req, res) => {
       status: 'success',
       message: 'Pedido registrado con éxito',
       pedido: { id: String(nuevoPedido._id), estado: nuevoPedido.estado, total: nuevoPedido.total, fechaCreacion: nuevoPedido.fechaCreacion, productos: nuevoPedido.productos },
-      ...(guestClaimToken ? { guestClaimToken } : {})
+      ...(guestClaimToken ? { guestClaimToken } : {}),
+      ...(digital ? { checkout: {
+        url: 'https://checkout.wompi.co/p/',
+        fields: {
+          'public-key': process.env.WOMPI_PUBLIC_KEY,
+          currency: 'COP',
+          'amount-in-cents': amountInCents,
+          reference: referenciaPago,
+          'signature:integrity': signatureIntegrity,
+          'redirect-url': `${String(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')}/pago/resultado?reference=${encodeURIComponent(referenciaPago)}`,
+          'customer-data:email': email,
+          'customer-data:full-name': `${datosEnvio.nombres} ${datosEnvio.apellidos}`,
+          'customer-data:phone-number': String(datosEnvio.whatsapp).replace(/\D/g, '').slice(-10)
+        }
+      } } : {})
     });
   } catch (error) {
     console.error("Error al crear pedido:", error.message);
@@ -160,5 +199,57 @@ export const reclamarPedidoInvitado = async (req, res) => {
   } catch (error) {
     console.error('Error al asociar pedido de invitado:', error);
     return res.status(500).json({ status: 'error', message: 'No se pudo asociar el pedido a la cuenta.' });
+  }
+};
+
+export const webhookWompi = async (req, res) => {
+  try {
+    const { event, data, signature, timestamp } = req.body || {};
+    const transaction = data?.transaction;
+    const secret = process.env.WOMPI_EVENTS_SECRET;
+    if (event !== 'transaction.updated' || !transaction || !secret || !Array.isArray(signature?.properties) || !signature.checksum) {
+      return res.status(400).json({ status: 'error' });
+    }
+    const valueAtPath = (path) => path.split('.').reduce((value, key) => value?.[key], data);
+    const signedValues = signature.properties.map(valueAtPath);
+    if (signedValues.some((value) => value === undefined || value === null)) return res.status(400).json({ status: 'error' });
+    const expected = crypto.createHash('sha256').update(`${signedValues.join('')}${timestamp}${secret}`).digest('hex').toUpperCase();
+    const received = String(signature.checksum).toUpperCase();
+    const expectedBuffer = Buffer.from(expected);
+    const receivedBuffer = Buffer.from(received);
+    if (expectedBuffer.length !== receivedBuffer.length || !crypto.timingSafeEqual(expectedBuffer, receivedBuffer)) {
+      return res.status(401).json({ status: 'error' });
+    }
+    if (process.env.NODE_ENV === 'production' && req.body.environment !== 'prod') return res.status(400).json({ status: 'error' });
+    const updated = await applyWompiTransaction(transaction);
+    if (!updated) return res.status(404).json({ status: 'error' });
+    return res.status(200).json({ status: 'success' });
+  } catch (error) {
+    console.error('Error al procesar evento de Wompi:', error.message);
+    return res.status(500).json({ status: 'error' });
+  }
+};
+
+export const consultarEstadoPagoWompi = async (req, res) => {
+  const { reference, id } = req.query;
+  if (!reference || !id || !process.env.WOMPI_PRIVATE_KEY) {
+    return res.status(400).json({ status: 'error', message: 'No se pudo consultar el estado del pago.' });
+  }
+  try {
+    const order = await Pedido.findOne({ referenciaPago: reference });
+    if (!order) return res.status(404).json({ status: 'error', message: 'No encontramos el pedido.' });
+    const environment = String(process.env.WOMPI_PRIVATE_KEY).includes('_test_') ? 'sandbox' : 'production';
+    const response = await fetch(`https://${environment === 'sandbox' ? 'sandbox' : 'production'}.wompi.co/v1/transactions/${encodeURIComponent(id)}`, {
+      headers: { Authorization: `Bearer ${process.env.WOMPI_PRIVATE_KEY}`, Accept: 'application/json' }
+    });
+    if (!response.ok) return res.status(502).json({ status: 'error', message: 'Wompi aún no confirma el resultado. Vuelve a consultar en un momento.' });
+    const { data: transaction } = await response.json();
+    if (transaction.reference !== order.referenciaPago) return res.status(403).json({ status: 'error', message: 'La transacción no corresponde a este pedido.' });
+    const updated = await applyWompiTransaction(transaction);
+    if (!updated) return res.status(409).json({ status: 'error', message: 'Los datos de la transacción no coinciden con el pedido.' });
+    return res.status(200).json({ estadoPago: updated.estadoPago });
+  } catch (error) {
+    console.error('Error al consultar pago en Wompi:', error.message);
+    return res.status(502).json({ status: 'error', message: 'No pudimos consultar el pago ahora.' });
   }
 };

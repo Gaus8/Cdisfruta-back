@@ -39,6 +39,11 @@ const pedidoSchema = new mongoose.Schema({
     enum: ['Pendiente', 'Comprobado', 'Enviado', 'Entregado', 'Cancelado'],
     default: 'Pendiente'
   },
+  envio: { type: String, enum: ['Gratis'], default: 'Gratis' },
+  metodoPago: { type: String, enum: ['Contraentrega', 'NEQUI', 'CARD'], default: 'Contraentrega' },
+  estadoPago: { type: String, enum: ['No requerido', 'PENDIENTE', 'APPROVED', 'DECLINED', 'ERROR', 'VOIDED'], default: 'No requerido' },
+  referenciaPago: { type: String, unique: true, sparse: true },
+  idTransaccionWompi: { type: String },
   motivoCancelacion: { type: String },
   guestClaimTokenHash: { type: String, select: false },
   guestClaimExpiresAt: { type: Date, select: false },

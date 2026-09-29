@@ -4,7 +4,9 @@ import {
   reclamarPedidoInvitado,
   obtenerMisPedidos, 
   obtenerTodosLosPedidos, 
-  actualizarEstadoPedido 
+  actualizarEstadoPedido,
+  webhookWompi,
+  consultarEstadoPagoWompi
 } from '../controllers/productos/pedidosControllers.js'; 
 import { verificarTokenMiddleware } from '../middleware/authMiddleware.js';
 import { optionalAuthMiddleware } from '../middleware/optionalAuthMiddleware.js';
@@ -13,6 +15,8 @@ const router = express.Router();
 
 // Rutas con el prefijo /pedidos para que coincidan con /api/pedidos/...
 router.post('/pedidos', optionalAuthMiddleware, crearPedido);                    
+router.post('/pagos/wompi/webhook', webhookWompi);
+router.get('/pedidos/estado-pago', consultarEstadoPagoWompi);
 router.post('/pedidos/reclamar', verificarTokenMiddleware, reclamarPedidoInvitado);
 router.get('/pedidos/mis-pedidos', verificarTokenMiddleware, obtenerMisPedidos); 
 router.get('/admin/pedidos', verificarTokenMiddleware, obtenerTodosLosPedidos);     
