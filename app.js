@@ -65,7 +65,8 @@ const startServer = async () => {
       console.log(`Servidor corriendo en: http://localhost:${PORT}`);
     });
   } catch (error) {
-    console.error("No se pudo iniciar el servidor:", error);
+    console.error("No se pudo iniciar el servidor porque MongoDB no está disponible:", error.message);
+    process.exitCode = 1;
   }
 };
 

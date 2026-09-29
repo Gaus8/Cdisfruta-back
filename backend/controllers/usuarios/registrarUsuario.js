@@ -142,6 +142,11 @@ export const registrarUsuarioPostCompra = async (req, res) => {
     try {
       await enviarCorreoVerificacion(newUser, codigoSeisDigitos);
     } catch (emailError) {
+      console.error('No se pudo enviar el correo de verificación post-compra:', {
+        code: emailError.code,
+        responseCode: emailError.responseCode,
+        message: emailError.message
+      });
       await Promise.all([
         User.deleteOne({ _id: newUser._id }),
         Pedido.updateOne({ _id: linkedOrder._id, usuario: newUser._id }, {

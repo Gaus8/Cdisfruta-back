@@ -9,7 +9,8 @@ export const connectionDb = async () => {
     )
 
   } catch (err) {
-    console.log('Fallo en la conexion: ' + err);
+    console.error('Fallo en la conexión con MongoDB:', err.message);
+    throw err;
   };
 };
 
