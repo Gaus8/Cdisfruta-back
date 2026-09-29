@@ -3,6 +3,7 @@ import User from '../../schema/userSchema.js';
 import UserActivity from '../../schema/userActivitySchema.js';
 import Pedido from '../../schema/pedidoSchema.js';
 import Producto from '../../schema/productsSchema.js';
+import { permissionsForRole } from '../../middleware/rbac.js';
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const registeredAt = (user) => user.createdAt || user._id.getTimestamp();
@@ -11,6 +12,51 @@ const requireAdmin = (req, res) => {
   if (req.user?.rol === 'admin') return true;
   res.status(403).json({ message: 'Solo administración puede acceder a esta información.' });
   return false;
+};
+
+export const listarAsignacionesRolesAdmin = async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const usuarios = await User.find({ _id: { $ne: req.user.id } }).select('nombre email rol permisos createdAt').sort({ createdAt: -1 }).lean();
+    return res.status(200).json({
+      rolesDisponibles: [
+        { id: 'admin', nombre: 'Administrador', permisos: ['*'] },
+        { id: 'user', nombre: 'Usuario cliente', permisos: [] },
+        { id: 'logistica', nombre: 'Gestión Logística', permisos: permissionsForRole('logistica') },
+        { id: 'catalogo', nombre: 'Gestión de Catálogo', permisos: permissionsForRole('catalogo') }
+      ],
+      usuarios: usuarios.map(({ _id, nombre, email, rol, permisos, createdAt }) => ({ id: String(_id), nombre, correo: email, rol, permisos: permisos || [], fechaRegistro: registeredAt({ createdAt, _id }) }))
+    });
+  } catch (error) {
+    console.error('Error al listar asignaciones de roles:', error);
+    return res.status(500).json({ message: 'No se pudo cargar la gestión de roles.' });
+  }
+};
+
+export const asignarRolUsuarioAdmin = async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  const { id } = req.params;
+  const { rol, permisos = [] } = req.body || {};
+  const allowedPermissions = permissionsForRole(rol);
+  if (!mongoose.isValidObjectId(id)) return res.status(400).json({ message: 'El identificador de usuario no es válido.' });
+  if (String(req.user.id) === String(id)) return res.status(403).json({ message: 'No puedes cambiar tu propio rol.' });
+  if (!['admin', 'user', 'logistica', 'catalogo'].includes(rol) || !Array.isArray(permisos) || permisos.some((permission) => typeof permission !== 'string' || !allowedPermissions.includes(permission))) {
+    return res.status(400).json({ message: 'El rol o sus permisos no son válidos.' });
+  }
+  try {
+    const target = await User.findById(id).select('_id rol');
+    if (!target) return res.status(404).json({ message: 'No se encontró la cuenta.' });
+    if (target.rol === 'admin' && rol !== 'admin' && await User.countDocuments({ rol: 'admin' }) <= 1) {
+      return res.status(409).json({ message: 'Debe permanecer al menos una cuenta administradora.' });
+    }
+    target.rol = rol;
+    target.permisos = rol === 'admin' ? ['*'] : [...new Set(permisos)];
+    await target.save();
+    return res.status(200).json({ usuario: { id: String(target._id), rol: target.rol, permisos: target.permisos }, message: 'Rol y permisos actualizados.' });
+  } catch (error) {
+    console.error('Error al asignar rol:', error);
+    return res.status(500).json({ message: 'No se pudo actualizar el rol.' });
+  }
 };
 
 export const listarUsuariosAdmin = async (req, res) => {

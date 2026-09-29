@@ -171,11 +171,18 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
+const inventoryProductPayload = (product, req) => {
+  const item = product?.toObject ? product.toObject() : { ...product };
+  if (req.user?.rol === 'logistica') delete item.precio;
+  return item;
+};
+
 // Inventario administrativo: comparte los productos y existencias de la tienda.
-export const getInventory = async (_req, res) => {
+export const getInventory = async (req, res) => {
   try {
     const productos = await Producto.find({ activo: true }).sort({ fechaCreacion: -1 });
-    res.status(200).json(productos);
+    const safeProducts = productos.map((product) => inventoryProductPayload(product, req));
+    res.status(200).json(safeProducts);
   } catch (error) {
     res.status(500).json({ message: 'No se pudo cargar el inventario', error: error.message });
   }
@@ -206,7 +213,7 @@ export const createInventoryProduct = async (req, res) => {
       imagen: fotos[0], imagenes: fotos, publicarEnTienda: false, enCatalogo: false
     });
     await notificarInventario(`Artículo añadido al inventario: ${product.nombre} (${product.stock} unidades).`, 'creacion_inventario');
-    res.status(201).json({ product });
+    res.status(201).json({ product: inventoryProductPayload(product, req) });
   } catch (error) {
     if (error.code === 11000) return res.status(409).json({ message: 'Ese código de barras ya está asignado a otro producto.' });
     res.status(400).json({ message: error.message });
@@ -250,7 +257,7 @@ export const updateInventoryStock = async (req, res) => {
     }
     if (!product) return res.status(404).json({ message: 'Producto no encontrado o el ajuste supera las existencias.' });
     await notificarInventario(`Stock actualizado: ${product.nombre}. Ahora hay ${product.stock} unidades.`, 'ajuste_stock');
-    res.status(200).json({ product });
+    res.status(200).json({ product: inventoryProductPayload(product, req) });
   } catch (error) {
     res.status(500).json({ message: 'No se pudo actualizar el stock', error: error.message });
   }
@@ -271,7 +278,7 @@ export const updateInventoryStockByBarcode = async (req, res) => {
       return res.status(exists ? 409 : 404).json({ message: exists ? 'El ajuste no puede dejar existencias negativas.' : 'No hay un producto activo con ese código de barras.' });
     }
     await notificarInventario(`Ingreso por código de barras: ${product.nombre}. Se ajustó el stock a ${product.stock} unidades.`, 'ajuste_stock');
-    res.status(200).json({ product });
+    res.status(200).json({ product: inventoryProductPayload(product, req) });
   } catch (error) {
     res.status(500).json({ message: 'No se pudo actualizar el stock', error: error.message });
   }
@@ -282,7 +289,7 @@ export const getInventoryProductByBarcode = async (req, res) => {
     const codigo = req.params.codigo.trim();
     const product = await Producto.findOne({ codigoBarras: codigo, activo: true });
     if (!product) return res.status(404).json({ message: 'Este código aún no está registrado.' });
-    res.status(200).json({ product });
+    res.status(200).json({ product: inventoryProductPayload(product, req) });
   } catch (error) {
     res.status(500).json({ message: 'No se pudo consultar el código de barras.', error: error.message });
   }
@@ -298,7 +305,7 @@ export const deleteInventoryProduct = async (req, res) => {
     );
     if (!product) return res.status(404).json({ message: 'El artículo no existe o ya fue retirado.' });
     await notificarInventario(`Artículo retirado del inventario: ${product.nombre}.`, 'eliminacion_inventario');
-    res.status(200).json({ message: `${product.nombre} fue retirado del inventario.`, product });
+    res.status(200).json({ message: `${product.nombre} fue retirado del inventario.`, product: inventoryProductPayload(product, req) });
   } catch (error) {
     res.status(500).json({ message: 'No se pudo retirar el artículo del inventario.', error: error.message });
   }
@@ -312,7 +319,7 @@ export const assignInventoryBarcode = async (req, res) => {
     const change = codigoBarras ? { $set: { codigoBarras } } : { $unset: { codigoBarras: 1 } };
     const product = await Producto.findOneAndUpdate({ _id: id, activo: true }, change, { returnDocument: 'after', runValidators: true });
     if (!product) return res.status(404).json({ message: 'Producto no encontrado.' });
-    res.status(200).json({ product });
+    res.status(200).json({ product: inventoryProductPayload(product, req) });
   } catch (error) {
     if (error.code === 11000) return res.status(409).json({ message: 'Ese código de barras ya está asignado a otro producto.' });
     res.status(500).json({ message: 'No se pudo guardar el código de barras.', error: error.message });

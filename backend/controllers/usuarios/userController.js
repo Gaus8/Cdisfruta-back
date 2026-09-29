@@ -62,6 +62,7 @@ const validateLogin = async (req, res) => {
       nombre: user.nombre,
       email: user.email,
       rol: user.rol,
+      permisos: user.permisos || [],
       telefono: user.telefono, // 👈 Incluir si lo decodificas en el token
       avatar: user.avatar
     },
@@ -84,6 +85,7 @@ const validateLogin = async (req, res) => {
         nombre: user.nombre,
         email: user.email,
         rol: user.rol,
+        permisos: user.permisos || [],
         telefono: user.telefono, // 👈 ¡Indispensable para que el frontend lo reciba al loguearse!
         avatar: user.avatar
       }

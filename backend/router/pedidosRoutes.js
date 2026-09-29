@@ -10,6 +10,7 @@ import {
 } from '../controllers/productos/pedidosControllers.js'; 
 import { verificarTokenMiddleware } from '../middleware/authMiddleware.js';
 import { optionalAuthMiddleware } from '../middleware/optionalAuthMiddleware.js';
+import { requireAdmin } from '../middleware/rbac.js';
 
 const router = express.Router();
 
@@ -19,8 +20,9 @@ router.post('/pagos/wompi/webhook', webhookWompi);
 router.get('/pedidos/estado-pago', consultarEstadoPagoWompi);
 router.post('/pedidos/reclamar', verificarTokenMiddleware, reclamarPedidoInvitado);
 router.get('/pedidos/mis-pedidos', verificarTokenMiddleware, obtenerMisPedidos); 
-router.get('/admin/pedidos', verificarTokenMiddleware, obtenerTodosLosPedidos);     
-router.patch('/admin/pedidos/:id/estado', verificarTokenMiddleware, actualizarEstadoPedido); 
-router.patch('/pedidos/:id/estado', verificarTokenMiddleware, actualizarEstadoPedido);
+router.get('/admin/pedidos', verificarTokenMiddleware, requireAdmin, obtenerTodosLosPedidos);
+router.patch('/admin/pedidos/:id/estado', verificarTokenMiddleware, requireAdmin, actualizarEstadoPedido);
+// Legacy alias: mantenerlo también bajo el mismo control estricto del panel.
+router.patch('/pedidos/:id/estado', verificarTokenMiddleware, requireAdmin, actualizarEstadoPedido);
 
 export default router;
