@@ -4,7 +4,7 @@ const pedidoSchema = new mongoose.Schema({
   usuario: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    default: null
   },
   productos: [
     {
@@ -40,6 +40,8 @@ const pedidoSchema = new mongoose.Schema({
     default: 'Pendiente'
   },
   motivoCancelacion: { type: String },
+  guestClaimTokenHash: { type: String, select: false },
+  guestClaimExpiresAt: { type: Date, select: false },
   fechaCreacion: {
     type: Date,
     default: Date.now

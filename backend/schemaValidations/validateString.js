@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const regex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[.!@#$%^&*])[\S]{8,16}$/;
-const regexNombre = /^[a-zA-Z\s]+$/;
+const regexNombre = /^[\p{L}\s]+$/u;
 
 const userSchema = z.object({
   name: z.string()
