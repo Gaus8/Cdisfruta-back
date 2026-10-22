@@ -1,11 +1,11 @@
 import express from 'express';
-import { verifyToken } from '../middleware/getToken.js';
-import { requireAdmin } from '../middleware/rbac.js';
+import { verifyToken } from '../middlewares/getToken.js';
+import { requireAdmin } from '../middlewares/rbac.js';
 import { 
   obtenerNotificaciones, 
   marcarLeida, 
   borrarTodas 
-} from '../controllers/productos/notificacionesControllers.js';
+} from '../controllers/notifications/notificationsController.js';
 
 export const routerNotificaciones = express.Router();
 

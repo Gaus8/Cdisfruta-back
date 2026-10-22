@@ -1,9 +1,9 @@
-import Pedido from '../../schema/pedidoSchema.js';
-import Notificacion from '../../schema/notificacionSchema.js';
+import Pedido from '../../models/pedidoSchema.js';
+import Notificacion from '../../models/notificacionSchema.js';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-import Producto from '../../schema/productsSchema.js';
-import User from '../../schema/userSchema.js';
+import Producto from '../../models/productsSchema.js';
+import User from '../../models/userSchema.js';
 
 const mapWompiStatus = (status) => ({
   PENDING: 'PENDIENTE', APPROVED: 'APPROVED', DECLINED: 'DECLINED', ERROR: 'ERROR', VOIDED: 'VOIDED'

@@ -1,8 +1,8 @@
-import { validateRegisterUser } from '../../schemaValidations/validateString.js';
-import { enviarCorreoVerificacion } from '../../middleware/enviarEmail.js';
+import { validateRegisterUser } from '../../validators/userValidators.js';
+import { enviarCorreoVerificacion } from '../../services/emailService.js';
 import bcrypt from 'bcrypt';
-import User from '../../schema/userSchema.js';
-import Pedido from '../../schema/pedidoSchema.js';
+import User from '../../models/userSchema.js';
+import Pedido from '../../models/pedidoSchema.js';
 import crypto from 'crypto';
 
 const generarTokenVerificacion = () => {

@@ -1,5 +1,5 @@
 
-import Notificacion from '../../schema/notificacionSchema.js'; 
+import Notificacion from '../../models/notificacionSchema.js';
 
 export const obtenerNotificaciones = async (req, res) => {
     try {

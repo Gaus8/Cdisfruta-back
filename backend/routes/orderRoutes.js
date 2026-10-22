@@ -7,10 +7,10 @@ import {
   actualizarEstadoPedido,
   webhookWompi,
   consultarEstadoPagoWompi
-} from '../controllers/productos/pedidosControllers.js'; 
-import { verificarTokenMiddleware } from '../middleware/authMiddleware.js';
-import { optionalAuthMiddleware } from '../middleware/optionalAuthMiddleware.js';
-import { requireAdmin } from '../middleware/rbac.js';
+} from '../controllers/orders/ordersController.js';
+import { verificarTokenMiddleware } from '../middlewares/authMiddleware.js';
+import { optionalAuthMiddleware } from '../middlewares/optionalAuthMiddleware.js';
+import { requireAdmin } from '../middlewares/rbac.js';
 
 const router = express.Router();
 

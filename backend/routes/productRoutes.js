@@ -4,11 +4,11 @@ import {
   getProducts, 
   updateProduct, 
   deleteProduct 
-} from '../controllers/productos/productosControllers.js'
-import { subirImg } from '../middleware/subirImg.js';
-import { verifyToken } from '../middleware/getToken.js';
-import { getInventory, getAdminCatalog, createInventoryProduct, exportInventoryToCatalog, updateInventoryStock, updateInventoryStockByBarcode, assignInventoryBarcode, getInventoryProductByBarcode, deleteInventoryProduct } from '../controllers/productos/productosControllers.js';
-import { requireAdmin, requirePermission } from '../middleware/rbac.js';
+} from '../controllers/products/productsController.js'
+import { subirImg } from '../middlewares/subirImg.js';
+import { verifyToken } from '../middlewares/getToken.js';
+import { getInventory, getAdminCatalog, createInventoryProduct, exportInventoryToCatalog, updateInventoryStock, updateInventoryStockByBarcode, assignInventoryBarcode, getInventoryProductByBarcode, deleteInventoryProduct } from '../controllers/products/productsController.js';
+import { requireAdmin, requirePermission } from '../middlewares/rbac.js';
 
 export const routerProductos = express.Router();
 

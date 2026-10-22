@@ -1,5 +1,5 @@
-import Producto from '../../schema/productsSchema.js'
-import Notificacion from '../../schema/notificacionSchema.js';
+import Producto from '../../models/productsSchema.js'
+import Notificacion from '../../models/notificacionSchema.js';
 import mongoose from 'mongoose';
 
 const notificarInventario = async (mensaje, tipo = 'inventario') => {

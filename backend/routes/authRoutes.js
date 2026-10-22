@@ -9,18 +9,18 @@ import {
   cambiarPasswordDesdeApp, 
   obtenerPreferenciasAdmin,
   actualizarPreferenciasAdmin,
-} from '../controllers/usuarios/userController.js';
-import { verifyToken } from '../middleware/getToken.js';
-import { registrarUsuario, registrarUsuarioPostCompra, reenviarVerificacionPostCompra } from '../controllers/usuarios/registrarUsuario.js';
-import { googleLogin } from '../controllers/usuarios/registrarUsuariosGoogle.js';
-import { subirAvatarPerfil } from '../middleware/subirImg.js';
-import { verificarTokenController } from '../models/authUser.js';
-import { eliminarUsuarioAdmin, eliminarUsuariosAdmin, listarUsuariosAdmin, obtenerActividadUsuarioAdmin, obtenerAnaliticaProductosAdmin, registrarActividadUsuario } from '../controllers/usuarios/adminUsersController.js';
-import { asignarRolUsuarioAdmin, listarAsignacionesRolesAdmin } from '../controllers/usuarios/adminUsersController.js';
-import { requireAdmin } from '../middleware/rbac.js';
+} from '../controllers/auth/authController.js';
+import { verifyToken } from '../middlewares/getToken.js';
+import { registrarUsuario, registrarUsuarioPostCompra, reenviarVerificacionPostCompra } from '../controllers/auth/registrationController.js';
+import { googleLogin } from '../controllers/auth/googleAuthController.js';
+import { subirAvatarPerfil } from '../middlewares/subirImg.js';
+import { verificarTokenController } from '../controllers/auth/sessionController.js';
+import { eliminarUsuarioAdmin, eliminarUsuariosAdmin, listarUsuariosAdmin, obtenerActividadUsuarioAdmin, obtenerAnaliticaProductosAdmin, registrarActividadUsuario } from '../controllers/admin/usersAdminController.js';
+import { asignarRolUsuarioAdmin, listarAsignacionesRolesAdmin } from '../controllers/admin/usersAdminController.js';
+import { requireAdmin } from '../middlewares/rbac.js';
 
 // Si usas multer para manejar la subida de imágenes a Cloudinary:
-// import upload from '../middleware/uploadMiddleware.js'; 
+// import upload from '../middlewares/uploadMiddleware.js';
 
 export const routerUsuarios = express.Router();
 

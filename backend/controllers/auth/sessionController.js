@@ -1,4 +1,4 @@
-import User from '../schema/userSchema.js'
+import User from '../../models/userSchema.js'
 
 export const verificarTokenController = async (req, res) => {
   try {

@@ -1,9 +1,9 @@
 import mongoose from 'mongoose';
-import User from '../../schema/userSchema.js';
-import UserActivity from '../../schema/userActivitySchema.js';
-import Pedido from '../../schema/pedidoSchema.js';
-import Producto from '../../schema/productsSchema.js';
-import { permissionsForRole } from '../../middleware/rbac.js';
+import User from '../../models/userSchema.js';
+import UserActivity from '../../models/userActivitySchema.js';
+import Pedido from '../../models/pedidoSchema.js';
+import Producto from '../../models/productsSchema.js';
+import { permissionsForRole } from '../../middlewares/rbac.js';
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const registeredAt = (user) => user.createdAt || user._id.getTimestamp();

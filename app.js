@@ -5,12 +5,12 @@ import cors from 'cors';
 import morgan from 'morgan';
 
 // Importaciones de Rutas 
-import { connectionDb } from './db/connection.js';
-import { routerNotificaciones } from './backend/router/notificacionesRouter.js';
-import { routerUsuarios } from './backend/router/userRoutes.js'; 
-import { routerProductos } from './backend/router/productRoutes.js';
-import routerPedidos from './backend/router/pedidosRoutes.js'; // <-- Importado sin llaves
-import { routerLanding } from './backend/router/landingRoutes.js';
+import { connectionDb } from './backend/config/database.js';
+import { routerNotificaciones } from './backend/routes/notificationRoutes.js';
+import { routerUsuarios } from './backend/routes/authRoutes.js';
+import { routerProductos } from './backend/routes/productRoutes.js';
+import routerPedidos from './backend/routes/orderRoutes.js'; // <-- Importado sin llaves
+import { routerLanding } from './backend/routes/landingRoutes.js';
 
 const corsOptions = {
   origin: [

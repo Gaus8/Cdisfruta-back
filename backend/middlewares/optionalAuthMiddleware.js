@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import User from '../schema/userSchema.js';
+import User from '../models/userSchema.js';
 
 /** Optional login for endpoints that support both guest and authenticated flows. */
 export const optionalAuthMiddleware = async (req, res, next) => {

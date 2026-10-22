@@ -1,8 +1,8 @@
 import express from 'express';
-import { getLandingSlides, updateLandingSlides } from '../controllers/productos/landingController.js';
-import { verifyToken } from '../middleware/getToken.js';
-import { subirImagenPortada } from '../middleware/subirImg.js';
-import { requireAdmin } from '../middleware/rbac.js';
+import { getLandingSlides, updateLandingSlides } from '../controllers/landing/landingController.js';
+import { verifyToken } from '../middlewares/getToken.js';
+import { subirImagenPortada } from '../middlewares/subirImg.js';
+import { requireAdmin } from '../middlewares/rbac.js';
 
 export const routerLanding = express.Router();
 

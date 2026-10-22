@@ -1,4 +1,4 @@
-import User from '../../schema/userSchema.js';
+import User from '../../models/userSchema.js';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import bcrypt from 'bcrypt';
