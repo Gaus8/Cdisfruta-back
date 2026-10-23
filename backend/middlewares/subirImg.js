@@ -27,19 +27,29 @@ const uploadProductos = multer({
 });
 export const subirImg = uploadProductos.array("imagenes", 5);
 
+const portadaExtensions = new Set(["jpg", "jpeg", "jfif", "png", "webp", "gif", "avif", "bmp", "tif", "tiff", "heic", "heif"]);
+const portadaMimes = new Set([
+  "image/jpeg", "image/jpg", "image/pjpeg",
+  "image/png", "image/webp", "image/gif", "image/avif",
+  "image/bmp", "image/x-ms-bmp",
+  "image/tiff", "image/tif",
+  "image/heic", "image/heif", "image/heic-sequence", "image/heif-sequence"
+]);
 const storagePortada = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: "cdisfruta-portada",
-    allowed_formats: ["jpg", "png", "jpeg", "webp"],
+    allowed_formats: ["jpg", "jpeg", "png", "webp", "gif", "avif", "bmp", "tif", "tiff", "heic", "heif"],
+    format: "webp",
   },
 });
 const uploadPortada = multer({
   storage: storagePortada,
-  limits: { fileSize: 5 * 1024 * 1024, files: 3 },
+  limits: { fileSize: 8 * 1024 * 1024, files: 12 },
   fileFilter: (_req, file, callback) => {
-    if (["image/jpeg", "image/png", "image/webp"].includes(file.mimetype)) return callback(null, true);
-    callback(new Error("Formato no permitido. Usa JPG, PNG o WebP."));
+    const extension = file.originalname.split(".").pop()?.toLowerCase() || "";
+    if (portadaMimes.has(file.mimetype) || portadaExtensions.has(extension)) return callback(null, true);
+    callback(new Error("Formato no permitido. Usa JPG, PNG, WebP, GIF, AVIF, BMP, TIFF o HEIC."));
   }
 });
 export const subirImagenPortada = uploadPortada.any();
