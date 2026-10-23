@@ -10,34 +10,48 @@ const client = new OAuth2Client(
   'postmessage' // Necesario para el flujo auth-code con React
 );
 
-export const googleLogin = async (req, res) => {
-  const { code } = req.body;
+const googleProfile = async ({ code, credential }) => {
+  if (credential) {
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    return ticket.getPayload();
+  }
 
-  if (!code) {
+  const { tokens } = await client.getToken({
+    code,
+    redirect_uri: 'postmessage'
+  });
+  const ticket = await client.verifyIdToken({
+    idToken: tokens.id_token,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+  return ticket.getPayload();
+};
+
+export const googleLogin = async (req, res) => {
+  const { code, credential } = req.body;
+
+  if (!code && !credential) {
     return res.status(400).json({
       status: 'error',
-      message: 'No se recibió el código de autorización'
+      message: 'No se recibió la sesión de Google'
     });
   }
 
   try {
-    // 1. Canjear el código por los tokens
-    const { tokens } = await client.getToken({
-      code,
-      redirect_uri: 'postmessage'
-    });
+    const payload = await googleProfile({ code, credential });
+    const email = payload?.email;
+    const name = payload?.name || payload?.given_name || "Usuario Google";
 
-    // 2. Validar el id_token devuelto por Google
-    const ticket = await client.verifyIdToken({
-      idToken: tokens.id_token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+    if (!email) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Google no compartió el correo de la cuenta.'
+      });
+    }
 
-    const payload = ticket.getPayload();
-    const email = payload.email;
-    const name = payload.name || payload.given_name || "Usuario Google";
-
-    // 3. Lógica de MONGODB
     let user = await User.findOne({ email });
 
     if (!user) {
@@ -51,6 +65,9 @@ export const googleLogin = async (req, res) => {
         terminosAceptados: true,
         rol: 'user'
       });
+      await user.save();
+    } else if (!user.verificado) {
+      user.verificado = true;
       await user.save();
     }
 
