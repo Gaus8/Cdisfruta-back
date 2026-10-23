@@ -5,7 +5,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 
 // Importaciones de Rutas 
-import { connectionDb } from './backend/config/database.js';
+import { connectionDb, ensureDb } from './backend/config/database.js';
 import { routerNotificaciones } from './backend/routes/notificationRoutes.js';
 import { routerUsuarios } from './backend/routes/authRoutes.js';
 import { routerProductos } from './backend/routes/productRoutes.js';
@@ -35,6 +35,15 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 app.use(morgan('dev'));
+
+app.use(async (req, res, next) => {
+  try {
+    await ensureDb();
+    next();
+  } catch (error) {
+    res.status(503).json({ valid: false, status: 'error', message: 'No se pudo conectar con la base de datos.' });
+  }
+});
 
 // Registro de Rutas con prefijo /api
 app.use('/api/auth', routerUsuarios);
@@ -67,6 +76,6 @@ const startServer = async () => {
   }
 };
 
-startServer();
+if (!process.env.VERCEL) startServer();
 
 export default app;

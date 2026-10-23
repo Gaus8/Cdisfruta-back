@@ -1,17 +1,18 @@
-import jwt from 'jsonwebtoken';
 import User from '../models/userSchema.js';
+import { accessTokensFromRequest, firstValidAccessToken } from '../utils/accessToken.js';
 
 /** Optional login for endpoints that support both guest and authenticated flows. */
 export const optionalAuthMiddleware = async (req, res, next) => {
-  const token = req.cookies?.access_token || req.headers.authorization?.split(' ')[1];
-  if (!token) return next();
+  const tokens = accessTokensFromRequest(req);
+  if (!tokens.length) return next();
   try {
-    const decoded = jwt.verify(token, process.env.JWT_TOKEN);
+    const { decoded } = firstValidAccessToken(tokens);
+    if (!decoded) return next();
     const user = await User.findById(decoded.id).select('_id rol permisos').lean();
     if (user) req.user = { id: String(user._id), rol: user.rol, permisos: user.permisos || [] };
     return next();
-  } catch {
-    // Ignore an expired optional session and continue as a guest; never trust its identity.
+  } catch (error) {
+    console.error('No se pudo leer la sesión opcional:', error.message);
     req.user = undefined;
     return next();
   }
