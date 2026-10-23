@@ -1,15 +1,30 @@
-import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import 'dotenv/config';
 
-export const enviarCorreoVerificacion = async (usuario, codigo) => {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD
+const mailer = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_USER?.trim(),
+    pass: process.env.EMAIL_PASSWORD?.replace(/\s+/g, '')
+  }
+});
+
+const enviar = async (mailOptions) => {
+  try {
+    return await mailer.sendMail(mailOptions);
+  } catch (error) {
+    if (error.code === 'EAUTH' || error.responseCode === 534) {
+      const blocked = new Error('Gmail bloqueó el envío. Entra con el navegador a la cuenta del correo de la tienda, confirma el aviso de seguridad y coloca en EMAIL_PASSWORD una contraseña de aplicación nueva, sin espacios.');
+      blocked.code = 'EAUTH';
+      throw blocked;
     }
-  });
+    throw error;
+  }
+};
+
+export const enviarCorreoVerificacion = async (usuario, codigo) => {
 
   const mailOptions = {
     from: `"SIECU - Plataforma CDISFRUTA" <${process.env.EMAIL_USER}>`,
@@ -51,17 +66,10 @@ export const enviarCorreoVerificacion = async (usuario, codigo) => {
     `
   };
 
-  return transporter.sendMail(mailOptions);
+  return enviar(mailOptions);
 };
 
-export const enviarCorreoRecuperacion = async (usuario, codigo) => {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD
-    }
-  });
+export const enviarCorreoRecuperacion = async (usuario, enlace) => {
 
   const mailOptions = {
     from: `"CDISFRUTA" <${process.env.EMAIL_USER}>`,
@@ -80,13 +88,11 @@ export const enviarCorreoRecuperacion = async (usuario, codigo) => {
           </p>
           
           <p style="color: #555; font-size: 16px; line-height: 1.5; text-align: left;">
-            Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en <strong>CDISFRUTA</strong>. Utiliza el siguiente código para continuar:
+            Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en <strong>CDISFRUTA</strong>. Abre este enlace para elegir una contraseña nueva:
           </p>
 
           <div style="margin: 30px 0; padding: 20px; background-color: #fff5f3; border: 2px dashed #ff7961; border-radius: 8px;">
-            <span style="font-size: 20px; font-weight: bold; letter-spacing: 8px; color: #ff7961;">
-              <a href="${codigo}">Cambiar Contraseña</a>
-            </span>
+            <a href="${enlace}" style="font-size: 18px; font-weight: bold; color: #ff7961;">Cambiar contraseña</a>
           </div>
 
           <p style="color: #888; font-size: 14px; margin-top: 25px;">
@@ -103,5 +109,5 @@ export const enviarCorreoRecuperacion = async (usuario, codigo) => {
     `
   };
 
-  return transporter.sendMail(mailOptions);
+  return enviar(mailOptions);
 };

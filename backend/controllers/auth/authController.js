@@ -1,4 +1,5 @@
-import { validateLoginUser } from '../../validators/userValidators.js';
+import { passwordRegex, passwordRuleMessage, validateLoginUser } from '../../validators/userValidators.js';
+import { sessionCookieOptions } from '../../utils/sessionCookie.js';
 import { enviarCorreoRecuperacion } from '../../services/emailService.js';
 import bcrypt from 'bcrypt';
 import User from '../../models/userSchema.js';
@@ -54,7 +55,7 @@ const validateLogin = async (req, res) => {
     });
   }
 
-  const FIVE_MINUTES_MS = 15 * 60 * 1000;
+  const SESSION_MS = 15 * 60 * 1000;
 
   const token = jwt.sign(
     {
@@ -70,14 +71,7 @@ const validateLogin = async (req, res) => {
     { expiresIn: '15m' } // 5m = 5 minutos en jsonwebtoken
   );
 
-  const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
-
-  return res.cookie('access_token', token, {
-    httpOnly: true,
-    secure: true,                             // 👈 Obligatorio en Vercel (HTTPS)
-    sameSite: isProduction ? 'none' : 'lax',  // 👈 'none' obligatorio para dominios cruzados
-    maxAge: FIVE_MINUTES_MS
-  })
+  return res.cookie('access_token', token, sessionCookieOptions(SESSION_MS))
     .status(200).json({
       status: 'success',
       message: 'Ingreso Exitoso',
@@ -169,8 +163,9 @@ export const solicitarRestablecerPassword = async (req, res) => {
   } catch (error) {
     console.error('Error detallado en solicitarRestablecerPassword:', error);
     return res.status(500).json({
-      message: 'Error al procesar el envío del correo.',
-      error: error.message
+      message: error.code === 'EAUTH'
+        ? error.message
+        : 'Error al procesar el envío del correo.'
     });
   }
 };
@@ -181,6 +176,9 @@ export const restablecerPasswordConToken = async (req, res) => {
 
     if (!token || !nuevaPassword) {
       return res.status(400).json({ message: 'El token y la nueva contraseña son obligatorios.' });
+    }
+    if (!passwordRegex.test(nuevaPassword)) {
+      return res.status(400).json({ message: passwordRuleMessage });
     }
 
     const user = await User.findOne({
@@ -218,6 +216,9 @@ export const cambiarPasswordDesdeApp = async (req, res) => {
         message: 'La contraseña actual y la nueva son obligatorias'
       });
     }
+    if (!passwordRegex.test(nuevaPassword)) {
+      return res.status(400).json({ status: 'error', message: passwordRuleMessage });
+    }
 
     // 2. Buscar al usuario en MongoDB
     const user = await User.findById(userId);
@@ -231,7 +232,7 @@ export const cambiarPasswordDesdeApp = async (req, res) => {
     // 3. Verificar que la contraseña actual sea correcta
     const esPasswordCorrecta = await bcrypt.compare(passActual, user.password);
     if (!esPasswordCorrecta) {
-      return res.status(401).json({
+      return res.status(400).json({
         status: 'error',
         message: 'La contraseña actual es incorrecta'
       });

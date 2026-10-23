@@ -9,13 +9,74 @@ const mapWompiStatus = (status) => ({
   PENDING: 'PENDIENTE', APPROVED: 'APPROVED', DECLINED: 'DECLINED', ERROR: 'ERROR', VOIDED: 'VOIDED'
 }[status] || null);
 
+const devolverStock = async (items) => {
+  for (const item of items) {
+    const id = item.id || item.productoId;
+    const quantity = Number(item.quantity ?? item.cantidad);
+    if (!id || !Number.isInteger(quantity) || quantity <= 0) continue;
+    await Producto.updateOne({ _id: id }, { $inc: { stock: quantity } });
+  }
+};
+
+const reservarStock = async (quantities) => {
+  const reserved = [];
+  try {
+    for (const [id, quantity] of quantities) {
+      const updated = await Producto.findOneAndUpdate(
+        { _id: id, activo: true, publicarEnTienda: { $ne: false }, stock: { $gte: quantity } },
+        { $inc: { stock: -quantity } },
+        { returnDocument: 'after' }
+      );
+      if (!updated) {
+        await devolverStock(reserved);
+        return { ok: false, id };
+      }
+      reserved.push({ id, quantity });
+    }
+    return { ok: true, reserved };
+  } catch (error) {
+    await devolverStock(reserved);
+    throw error;
+  }
+};
+
+const liberarStockDelPedido = async (pedido) => {
+  if (!pedido?.stockDescontado) return;
+  await devolverStock(pedido.productos || []);
+};
+
 const applyWompiTransaction = async (transaction) => {
   const paymentStatus = mapWompiStatus(transaction?.status);
   if (!paymentStatus || transaction.currency !== 'COP') return null;
   const order = await Pedido.findOne({ referenciaPago: transaction.reference });
   if (!order || order.metodoPago !== transaction.payment_method_type || Math.round(order.total * 100) !== Number(transaction.amount_in_cents)) return null;
   if (order.estadoPago !== 'PENDIENTE' && paymentStatus === 'PENDIENTE') return order;
-  const update = { estadoPago: paymentStatus, idTransaccionWompi: String(transaction.id || '') };
+
+  const transactionId = String(transaction.id || '');
+  const paymentFailed = ['DECLINED', 'ERROR', 'VOIDED'].includes(paymentStatus);
+  if (paymentFailed) {
+    const previous = await Pedido.findOneAndUpdate(
+      { _id: order._id, estadoPago: 'PENDIENTE' },
+      { $set: {
+        estadoPago: paymentStatus,
+        idTransaccionWompi: transactionId,
+        ...(order.estado === 'Pendiente' ? { estado: 'Cancelado', motivoCancelacion: 'El pago no fue aprobado.', stockDescontado: false } : {})
+      } },
+      { returnDocument: 'before' }
+    );
+    if (!previous) return Pedido.findById(order._id);
+    if (previous.stockDescontado && previous.estado === 'Pendiente') {
+      try {
+        await liberarStockDelPedido(previous);
+      } catch (stockError) {
+        await Pedido.updateOne({ _id: order._id }, { $set: { stockDescontado: true } });
+        throw stockError;
+      }
+    }
+    return Pedido.findById(order._id);
+  }
+
+  const update = { estadoPago: paymentStatus, idTransaccionWompi: transactionId };
   if (paymentStatus === 'APPROVED' && order.estado === 'Pendiente') update.estado = 'Comprobado';
   return Pedido.findByIdAndUpdate(order._id, { $set: update }, { returnDocument: 'after' });
 };
@@ -59,11 +120,6 @@ export const crearPedido = async (req, res) => {
       const id = String(item.productoId);
       requestedQuantities.set(id, (requestedQuantities.get(id) || 0) + Number(item.cantidad));
     });
-    for (const [id, quantity] of requestedQuantities) {
-      if (quantity > Number(productsById.get(id).stock || 0)) {
-        return res.status(409).json({ status: 'error', message: `No hay existencias suficientes de ${productsById.get(id).nombre}.` });
-      }
-    }
     const productosValidados = productos.map((item) => {
       const product = productsById.get(String(item.productoId));
       return { productoId: product._id, nombre: product.nombre, precio: Number(product.precio || 0), cantidad: Number(item.cantidad), imagen: product.imagen || '' };
@@ -77,16 +133,28 @@ export const crearPedido = async (req, res) => {
     const referenciaPago = digital ? `CDIS${Date.now()}${crypto.randomBytes(5).toString('hex').toUpperCase()}` : undefined;
     const amountInCents = Math.round(totalCalculado * 100);
     const signatureIntegrity = digital ? crypto.createHash('sha256').update(`${referenciaPago}${amountInCents}COP${process.env.WOMPI_INTEGRITY_SECRET}`).digest('hex') : undefined;
-    const nuevoPedido = await Pedido.create({
+    const reservation = await reservarStock(requestedQuantities);
+    if (!reservation.ok) {
+      const nombre = productsById.get(String(reservation.id))?.nombre || 'un producto';
+      return res.status(409).json({ status: 'error', message: `No hay existencias suficientes de ${nombre}.` });
+    }
+    let nuevoPedido;
+    try {
+      nuevoPedido = await Pedido.create({
       usuario: usuarioId,
       productos: productosValidados,
       total: totalCalculado,
       datosEnvio: { ...datosEnvio, correo: email },
       estado: 'Pendiente',
+      stockDescontado: true,
       envio: 'Gratis', metodoPago, estadoPago: digital ? 'PENDIENTE' : 'No requerido',
       ...(referenciaPago ? { referenciaPago } : {}),
       ...(guestClaimTokenHash ? { guestClaimTokenHash, guestClaimExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) } : {})
-    });
+      });
+    } catch (createError) {
+      await devolverStock(reservation.reserved);
+      throw createError;
+    }
 
     // Creamos una notificación para el panel de administración
     await Notificacion.create({
@@ -136,7 +204,7 @@ export const obtenerMisPedidos = async (req, res) => {
 export const obtenerTodosLosPedidos = async (req, res) => {
   try {
     const pedidos = await Pedido.find()
-      .populate('usuario', 'nombre correo') 
+      .populate('usuario', 'nombre email')
       .sort({ fechaCreacion: -1 });
 
     res.status(200).json(pedidos);
@@ -156,16 +224,36 @@ export const actualizarEstadoPedido = async (req, res) => {
       return res.status(400).json({ status: 'error', message: 'Estado no válido' });
     }
 
-    const pedidoActualizado = await Pedido.findByIdAndUpdate(
-      id,
-      { estado },
-      { returnDocument: 'after' }
-    );
-
-    if (!pedidoActualizado) {
-      return res.status(404).json({ status: 'error', message: 'Pedido no encontrado' });
+    const motivoLimpio = String(motivo || '').trim().slice(0, 300);
+    const cambios = { estado };
+    if (estado === 'Cancelado') {
+      if (motivoLimpio) cambios.motivoCancelacion = motivoLimpio;
+      cambios.stockDescontado = false;
     }
 
+    const pedidoAnterior = await Pedido.findOneAndUpdate(
+      { _id: id, estado: { $ne: estado } },
+      { $set: cambios },
+      { returnDocument: 'before' }
+    );
+
+    if (!pedidoAnterior) {
+      const existe = mongoose.isValidObjectId(id) && await Pedido.exists({ _id: id });
+      if (!existe) return res.status(404).json({ status: 'error', message: 'Pedido no encontrado' });
+      const pedidoActual = await Pedido.findById(id);
+      return res.status(200).json({ status: 'success', message: `Estado actualizado a ${estado}`, pedido: pedidoActual });
+    }
+
+    if (estado === 'Cancelado' && pedidoAnterior.stockDescontado) {
+      try {
+        await liberarStockDelPedido(pedidoAnterior);
+      } catch (stockError) {
+        await Pedido.updateOne({ _id: id }, { $set: { stockDescontado: true } });
+        throw stockError;
+      }
+    }
+
+    const pedidoActualizado = await Pedido.findById(id);
     res.status(200).json({
       status: 'success',
       message: `Estado actualizado a ${estado}`,
@@ -173,6 +261,48 @@ export const actualizarEstadoPedido = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ status: 'error', message: error.message });
+  }
+};
+
+export const cancelarMiPedido = async (req, res) => {
+  const { id } = req.params;
+  const motivo = String(req.body?.motivo || '').trim();
+  if (!mongoose.isValidObjectId(id)) {
+    return res.status(400).json({ status: 'error', message: 'El pedido no es válido.' });
+  }
+  if (!motivo || motivo.length > 300) {
+    return res.status(400).json({ status: 'error', message: 'Selecciona o escribe un motivo de cancelación.' });
+  }
+  if (req.body?.estado && req.body.estado !== 'Cancelado') {
+    return res.status(400).json({ status: 'error', message: 'Solo puedes cancelar tu pedido.' });
+  }
+
+  try {
+    const pedidoAnterior = await Pedido.findOneAndUpdate(
+      { _id: id, usuario: req.user.id, estado: 'Pendiente' },
+      { $set: { estado: 'Cancelado', motivoCancelacion: motivo, stockDescontado: false } },
+      { returnDocument: 'before' }
+    );
+    if (!pedidoAnterior) {
+      const propio = await Pedido.exists({ _id: id, usuario: req.user.id });
+      return res.status(propio ? 409 : 404).json({
+        status: 'error',
+        message: propio ? 'Solo puedes cancelar pedidos que siguen pendientes.' : 'No encontramos ese pedido en tu cuenta.'
+      });
+    }
+    if (pedidoAnterior.stockDescontado) {
+      try {
+        await liberarStockDelPedido(pedidoAnterior);
+      } catch (stockError) {
+        await Pedido.updateOne({ _id: id }, { $set: { stockDescontado: true } });
+        throw stockError;
+      }
+    }
+    const pedido = await Pedido.findById(id);
+    return res.status(200).json({ status: 'success', message: 'Pedido cancelado', pedido });
+  } catch (error) {
+    console.error('Error al cancelar pedido:', error.message);
+    return res.status(500).json({ status: 'error', message: 'No se pudo cancelar el pedido.' });
   }
 };
 

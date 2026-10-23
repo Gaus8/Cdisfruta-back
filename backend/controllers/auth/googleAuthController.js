@@ -2,6 +2,7 @@ import User from '../../models/userSchema.js';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import bcrypt from 'bcrypt';
+import { sessionCookieOptions } from '../../utils/sessionCookie.js';
 
 const client = new OAuth2Client(
   process.env.GOOGLE_CLIENT_ID,
@@ -54,30 +55,31 @@ export const googleLogin = async (req, res) => {
     }
 
     // 4. Generar tu JWT propio
+    const SESSION_MS = 60 * 60 * 1000;
     const token = jwt.sign(
       {
         id: user._id || user.id,
         nombre: user.nombre || user.name,
         email: user.email,
-        rol: user.rol
+        rol: user.rol,
+        permisos: user.permisos || []
       },
       process.env.JWT_TOKEN,
       { expiresIn: '1h' }
     );
 
-    // 5. Responder con Cookie + JSON
-    res.cookie('access_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 24 * 60 * 60 * 1000
-    })
+    res.cookie('access_token', token, sessionCookieOptions(SESSION_MS))
     .status(200)
     .json({
       status: 'success',
       message: 'Ingreso Exitoso',
       rol: user.rol,
-      token
+      user: {
+        nombre: user.nombre,
+        email: user.email,
+        rol: user.rol,
+        permisos: user.permisos || []
+      }
     });
 
   } catch (error) {

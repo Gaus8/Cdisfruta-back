@@ -11,6 +11,7 @@ import { routerUsuarios } from './backend/routes/authRoutes.js';
 import { routerProductos } from './backend/routes/productRoutes.js';
 import routerPedidos from './backend/routes/orderRoutes.js'; // <-- Importado sin llaves
 import { routerLanding } from './backend/routes/landingRoutes.js';
+import { sessionCookieOptions } from './backend/utils/sessionCookie.js';
 
 const corsOptions = {
   origin: [
@@ -47,11 +48,7 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/logout', (req, res) => {
-  res.clearCookie('access_token', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
-  });
+  res.clearCookie('access_token', sessionCookieOptions());
 
   return res.status(200).json({ status: 'success', message: 'Sesión cerrada' });
 });

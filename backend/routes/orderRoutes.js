@@ -5,6 +5,7 @@ import {
   obtenerMisPedidos, 
   obtenerTodosLosPedidos, 
   actualizarEstadoPedido,
+  cancelarMiPedido,
   webhookWompi,
   consultarEstadoPagoWompi
 } from '../controllers/orders/ordersController.js';
@@ -22,7 +23,6 @@ router.post('/pedidos/reclamar', verificarTokenMiddleware, reclamarPedidoInvitad
 router.get('/pedidos/mis-pedidos', verificarTokenMiddleware, obtenerMisPedidos); 
 router.get('/admin/pedidos', verificarTokenMiddleware, requireAdmin, obtenerTodosLosPedidos);
 router.patch('/admin/pedidos/:id/estado', verificarTokenMiddleware, requireAdmin, actualizarEstadoPedido);
-// Legacy alias: mantenerlo también bajo el mismo control estricto del panel.
-router.patch('/pedidos/:id/estado', verificarTokenMiddleware, requireAdmin, actualizarEstadoPedido);
+router.patch('/pedidos/:id/estado', verificarTokenMiddleware, cancelarMiPedido);
 
 export default router;

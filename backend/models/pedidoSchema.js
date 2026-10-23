@@ -45,6 +45,7 @@ const pedidoSchema = new mongoose.Schema({
   referenciaPago: { type: String, unique: true, sparse: true },
   idTransaccionWompi: { type: String },
   motivoCancelacion: { type: String },
+  stockDescontado: { type: Boolean, default: false },
   guestClaimTokenHash: { type: String, select: false },
   guestClaimExpiresAt: { type: Date, select: false },
   fechaCreacion: {

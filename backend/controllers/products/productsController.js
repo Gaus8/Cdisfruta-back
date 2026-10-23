@@ -14,9 +14,6 @@ const notificarInventario = async (mensaje, tipo = 'inventario') => {
 export const getProducts = async (req, res) => {
   try {
     const productos = await Producto.find({ activo: true, publicarEnTienda: { $ne: false } });
-    if (!productos || productos.length === 0) {
-      return res.status(404).json({ message: "No hay productos registrados" });
-    }
     res.status(200).json(productos);
   } catch (error) {
     res.status(500).json({

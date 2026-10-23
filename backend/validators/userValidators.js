@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
-const regex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[.!@#$%^&*])[\S]{8,16}$/;
+export const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[.!@#$%^&*])[\S]{8,16}$/;
+export const passwordRuleMessage = 'Debe tener 8-16 caracteres, una mayúscula, una minúscula, un número y un símbolo (.!@#$%^&*).';
+const regex = passwordRegex;
 const regexNombre = /^[\p{L}\s]+$/u;
 
 const userSchema = z.object({
