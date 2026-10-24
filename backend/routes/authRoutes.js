@@ -17,7 +17,7 @@ import { subirAvatarPerfil } from '../middlewares/subirImg.js';
 import { verificarTokenController } from '../controllers/auth/sessionController.js';
 import { eliminarUsuarioAdmin, eliminarUsuariosAdmin, listarUsuariosAdmin, obtenerActividadUsuarioAdmin, obtenerAnaliticaProductosAdmin, registrarActividadUsuario } from '../controllers/admin/usersAdminController.js';
 import { asignarRolUsuarioAdmin, listarAsignacionesRolesAdmin } from '../controllers/admin/usersAdminController.js';
-import { requireAdmin } from '../middlewares/rbac.js';
+import { requireAdmin, requirePermission } from '../middlewares/rbac.js';
 
 // Si usas multer para manejar la subida de imágenes a Cloudinary:
 // import upload from '../middlewares/uploadMiddleware.js';
@@ -45,7 +45,7 @@ routerUsuarios.get('/admin/usuarios/:id/actividad', verifyToken, requireAdmin, o
 routerUsuarios.delete('/admin/usuarios/:id', verifyToken, requireAdmin, eliminarUsuarioAdmin);
 routerUsuarios.get('/admin/roles', verifyToken, requireAdmin, listarAsignacionesRolesAdmin);
 routerUsuarios.patch('/admin/roles/:id', verifyToken, requireAdmin, asignarRolUsuarioAdmin);
-routerUsuarios.get('/admin/analitica-productos', verifyToken, requireAdmin, obtenerAnaliticaProductosAdmin);
+routerUsuarios.get('/admin/analitica-productos', verifyToken, requirePermission('analytics:read'), obtenerAnaliticaProductosAdmin);
 routerUsuarios.post('/actividad', verifyToken, registrarActividadUsuario);
 routerUsuarios.put('/usuario/actualizar-avatar', verifyToken, subirAvatarPerfil, actualizarAvatar); 
 

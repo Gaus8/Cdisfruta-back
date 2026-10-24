@@ -1,6 +1,6 @@
 import express from 'express';
 import { verifyToken } from '../middlewares/getToken.js';
-import { requireAdmin } from '../middlewares/rbac.js';
+import { requirePermission } from '../middlewares/rbac.js';
 import { 
   obtenerNotificaciones, 
   marcarLeida, 
@@ -10,10 +10,10 @@ import {
 export const routerNotificaciones = express.Router();
 
 // Obtener notificaciones no leídas
-routerNotificaciones.get('/get-notificaciones', verifyToken, requireAdmin, obtenerNotificaciones);
+routerNotificaciones.get('/get-notificaciones', verifyToken, requirePermission('notifications:read'), obtenerNotificaciones);
 
 // Marcar una como leída 
-routerNotificaciones.patch('/notificaciones/:id', verifyToken, requireAdmin, marcarLeida);
+routerNotificaciones.patch('/notificaciones/:id', verifyToken, requirePermission('notifications:read'), marcarLeida);
 
 // Todas leidas
-routerNotificaciones.delete('/notificaciones-todas', verifyToken, requireAdmin, borrarTodas);
+routerNotificaciones.delete('/notificaciones-todas', verifyToken, requirePermission('notifications:read'), borrarTodas);

@@ -3,7 +3,7 @@ import User from '../../models/userSchema.js';
 import UserActivity from '../../models/userActivitySchema.js';
 import Pedido from '../../models/pedidoSchema.js';
 import Producto from '../../models/productsSchema.js';
-import { permissionsForRole } from '../../middlewares/rbac.js';
+import { hasPermission, permissionsForRole } from '../../middlewares/rbac.js';
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const registeredAt = (user) => user.createdAt || user._id.getTimestamp();
@@ -216,7 +216,9 @@ export const eliminarUsuariosAdmin = async (req, res) => {
 };
 
 export const obtenerAnaliticaProductosAdmin = async (req, res) => {
-  if (!requireAdmin(req, res)) return;
+  if (!hasPermission(req.user, 'analytics:read')) {
+    return res.status(403).json({ message: 'No tienes permisos para acceder a esta información.' });
+  }
   try {
     const confirmedStates = ['Comprobado', 'Enviado', 'Entregado'];
     const [catalog, orderMetrics, visitMetrics, interestMetrics] = await Promise.all([

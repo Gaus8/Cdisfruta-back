@@ -11,7 +11,7 @@ import {
 } from '../controllers/orders/ordersController.js';
 import { verificarTokenMiddleware } from '../middlewares/authMiddleware.js';
 import { optionalAuthMiddleware } from '../middlewares/optionalAuthMiddleware.js';
-import { requireAdmin } from '../middlewares/rbac.js';
+import { requirePermission } from '../middlewares/rbac.js';
 
 const router = express.Router();
 
@@ -21,8 +21,8 @@ router.post('/pagos/wompi/webhook', webhookWompi);
 router.get('/pedidos/estado-pago', consultarEstadoPagoWompi);
 router.post('/pedidos/reclamar', verificarTokenMiddleware, reclamarPedidoInvitado);
 router.get('/pedidos/mis-pedidos', verificarTokenMiddleware, obtenerMisPedidos); 
-router.get('/admin/pedidos', verificarTokenMiddleware, requireAdmin, obtenerTodosLosPedidos);
-router.patch('/admin/pedidos/:id/estado', verificarTokenMiddleware, requireAdmin, actualizarEstadoPedido);
+router.get('/admin/pedidos', verificarTokenMiddleware, requirePermission('orders:read'), obtenerTodosLosPedidos);
+router.patch('/admin/pedidos/:id/estado', verificarTokenMiddleware, requirePermission('orders:write'), actualizarEstadoPedido);
 router.patch('/pedidos/:id/estado', verificarTokenMiddleware, cancelarMiPedido);
 
 export default router;
