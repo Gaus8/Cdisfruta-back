@@ -11,7 +11,7 @@ const mapWompiStatus = (status) => ({
 
 const devolverStock = async (items) => {
   for (const item of items) {
-    const id = item.id || item.productoId;
+    const id = item.productoId || item.id;
     const quantity = Number(item.quantity ?? item.cantidad);
     if (!id || !Number.isInteger(quantity) || quantity <= 0) continue;
     await Producto.updateOne({ _id: id }, { $inc: { stock: quantity } });

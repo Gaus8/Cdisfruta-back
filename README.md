@@ -73,7 +73,7 @@ npm run dev
 
 `npm run seeds` borra los usuarios de la base de desarrollo y crea dos cuentas locales ya verificadas: una de administración y una de cliente. El script se detiene si `NODE_ENV` es `production`. Las credenciales están en `seeds/seedsData.js`.
 
-`npm test` todavía no ejecuta pruebas.
+`npm test` ejecuta las pruebas de funcionalidad de la API con Vitest. Corren sobre una base MongoDB en memoria y no envían correos.
 
 ## Variables de entorno
 
@@ -110,6 +110,7 @@ backend/validators             esquemas Zod
 backend/services               correo
 backend/utils                  cookie de sesión y lectura del JWT
 seeds                          usuarios locales de prueba
+tests                          pruebas de funcionalidad de la API
 docs                           colección de Postman
 ```
 
@@ -121,7 +122,9 @@ Los routers se montan así:
 
 ## Documentación de la API
 
-`docs/CDISFRUTA.postman_collection.json` describe los 50 endpoints montados, con el cuerpo de cada uno. En Postman se importa el archivo. La variable `baseUrl` apunta a producción; en local cámbiala a `http://localhost:5000`.
+`docs/CDISFRUTA.postman_collection.json` describe los 50 endpoints montados, con el cuerpo de cada uno. En Postman se importa el archivo. `baseUrl` es solo el host, sin protocolo: en producción `cdisfruta-back.vercel.app` con `scheme` en `https`; en local `localhost:5000` con `scheme` en `http`.
+
+`docs/openapi.yaml` es la misma API en OpenAPI 3. Fern importa este archivo. El JSON de Postman no es un spec de OpenAPI, por eso Fern lo rechaza.
 
 Después de **Login Usuario** o **Ingreso con Google**, Postman guarda la cookie y la reenvía en las peticiones del mismo host.
 

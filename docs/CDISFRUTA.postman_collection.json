@@ -1,13 +1,17 @@
 {
   "info": {
     "name": "CDISFRUTA",
-    "description": "Colección de la API de CDISFRUTA, con los endpoints montados hoy en el servidor.\n\nLa carpeta **auth** conserva los nombres de las peticiones que ya existían en Postman. Las rutas usan el prefijo real del servidor. El registro es `POST /api/auth/registro`.\n\nCambia `baseUrl` en las variables de la colección:\n- Local: `http://localhost:5000`\n- Publicado: `https://cdisfruta-back.vercel.app`\n\nEl login por correo deja la cookie `access_token` por 15 minutos. El ingreso con Google la deja por 1 hora. En local la cookie es `SameSite=Lax`; en producción es `Secure` y `SameSite=None`.",
+    "description": "Colección de la API de CDISFRUTA, con los endpoints montados hoy en el servidor.\n\nLa carpeta **auth** conserva los nombres de las peticiones que ya existían en Postman. Las rutas usan el prefijo real del servidor. El registro es `POST /api/auth/registro`.\n\nCambia las variables de la colección. `baseUrl` es solo el host, sin protocolo:\n- Local: `scheme` = `http` y `baseUrl` = `localhost:5000`\n- Publicado: `scheme` = `https` y `baseUrl` = `cdisfruta-back.vercel.app`\n\nEl login por correo deja la cookie `access_token` por 15 minutos. El ingreso con Google la deja por 1 hora. En local la cookie es `SameSite=Lax`; en producción es `Secure` y `SameSite=None`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
+      "key": "scheme",
+      "value": "https"
+    },
+    {
       "key": "baseUrl",
-      "value": "https://cdisfruta-back.vercel.app"
+      "value": "cdisfruta-back.vercel.app"
     },
     {
       "key": "usuarioId",
@@ -28,6 +32,10 @@
     {
       "key": "codigoBarras",
       "value": ""
+    },
+    {
+      "key": "accessToken",
+      "value": ""
     }
   ],
   "item": [
@@ -46,7 +54,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/registro",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/registro",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -54,7 +62,8 @@
                 "api",
                 "auth",
                 "registro"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nRegistra un cliente nuevo. El campo `name` se guarda como `nombre`. Valida el esquema, exige aceptar los términos, rechaza un correo ya registrado y envía el código de verificación.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| name | String | Sí | Nombre del usuario. Mínimo 6 letras. Se guarda en `nombre`. |\n| email | String | Sí | Correo de la cuenta. |\n| password | String | Sí | La contraseña debe tener 8 a 16 caracteres, una mayúscula, una minúscula, un número y un símbolo de `.!@#$%^&*`. |\n| terminosAceptados | Boolean | Sí | Debe ser exactamente `true`. |\n\n## Respuesta\n\n`201` con `status: success` y el usuario creado. La cuenta queda sin verificar hasta **Verificar Cuenta**.",
             "body": {
@@ -65,6 +74,9 @@
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -80,7 +92,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/registro-post-compra",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/registro-post-compra",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -88,7 +100,8 @@
                 "api",
                 "auth",
                 "registro-post-compra"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nCrea la cuenta después de una compra como invitado y vincula ese pedido. El correo debe coincidir con el del envío y el `claimToken` debe seguir vigente.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| name | String | Sí | Nombre. Mismas reglas que el registro normal. |\n| email | String | Sí | Debe coincidir con el correo del pedido. |\n| emailConfirmacion | String | Sí | Debe ser igual a `email`. |\n| password | String | Sí | La contraseña debe tener 8 a 16 caracteres, una mayúscula, una minúscula, un número y un símbolo de `.!@#$%^&*`. |\n| terminosAceptados | Boolean | Sí | Debe ser `true`. |\n| claimToken | String | Sí | Referencia devuelta al crear el pedido de invitado. Entre 40 y 100 caracteres. |",
             "body": {
@@ -99,6 +112,9 @@
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -114,7 +130,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/reenviar-verificacion-post-compra",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/reenviar-verificacion-post-compra",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -122,7 +138,8 @@
                 "api",
                 "auth",
                 "reenviar-verificacion-post-compra"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nReenvía el código de verificación de una cuenta creada y todavía no activada. Hay un minuto de espera entre envíos.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| email | String | Sí | Correo de la cuenta pendiente. |",
             "body": {
@@ -133,6 +150,9 @@
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -148,7 +168,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/verificar-cuenta",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/verificar-cuenta",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -156,7 +176,8 @@
                 "api",
                 "auth",
                 "verificar-cuenta"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nActiva la cuenta con el código de 6 dígitos enviado al correo.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| email | String | Sí | Correo registrado. |\n| codigo | String | Sí | Código de verificación vigente. |\n\n## Respuesta\n\n`200` cuando el código coincide. `400` si ya estaba verificada o el código no corresponde.",
             "body": {
@@ -167,6 +188,9 @@
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -182,7 +206,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/login",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -190,7 +214,8 @@
                 "api",
                 "auth",
                 "login"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nInicia sesión con correo y contraseña. La cuenta debe estar verificada. La respuesta guarda la cookie `access_token` durante 15 minutos.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| email | String | Sí | Correo registrado. |\n| password | String | Sí | Contraseña de la cuenta. |\n\n## Respuesta\n\n`200` con `user.nombre`, `email`, `rol`, `permisos`, `telefono` y `avatar`. `403` si falta verificar la cuenta.",
             "body": {
@@ -201,6 +226,9 @@
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -211,7 +239,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/verificar-token",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/verificar-token",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -219,7 +247,8 @@
                 "api",
                 "auth",
                 "verificar-token"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nConfirma la sesión y devuelve los datos frescos del usuario, incluido el avatar.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`.\n\n## Respuesta\n\n`200` con `valid: true` y `user`. `403` si no hay cookie ni Bearer."
           },
@@ -236,7 +265,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/google",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/google",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -244,7 +273,8 @@
                 "api",
                 "auth",
                 "google"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nCrea o recupera la cuenta con la sesión que devuelve el botón de Google y deja la cookie `access_token` por 1 hora. Si la cuenta ya existía y no estaba verificada, queda verificada.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| credential | String | Uno de los dos | ID token del botón Continuar con Google. |\n| code | String | Uno de los dos | Código del flujo anterior `postmessage`. Se puede enviar en lugar de `credential`. |",
             "body": {
@@ -255,6 +285,9 @@
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -270,7 +303,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/codigo-password",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/codigo-password",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -278,7 +311,8 @@
                 "api",
                 "auth",
                 "codigo-password"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nEnvía al correo un enlace para restablecer la contraseña. El enlace vence a los 15 minutos.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| email | String | Sí | Correo de una cuenta existente. |",
             "body": {
@@ -289,6 +323,9 @@
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -304,7 +341,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/reset-password",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/reset-password",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -312,7 +349,8 @@
                 "api",
                 "auth",
                 "reset-password"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nCambia la contraseña usando el token del enlace de recuperación. El servidor lo expone como `POST /api/auth/reset-password`.\n\nLa contraseña debe tener 8 a 16 caracteres, una mayúscula, una minúscula, un número y un símbolo de `.!@#$%^&*`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| token | String | Sí | Token recibido en el enlace del correo. |\n| nuevaPassword | String | Sí | La contraseña debe tener 8 a 16 caracteres, una mayúscula, una minúscula, un número y un símbolo de `.!@#$%^&*`. |",
             "body": {
@@ -323,6 +361,9 @@
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -338,7 +379,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/cambiar-password",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/cambiar-password",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -346,7 +387,8 @@
                 "api",
                 "auth",
                 "cambiar-password"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nCambia la contraseña de la sesión activa. No usa el token del correo.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`.\n\nLa contraseña debe tener 8 a 16 caracteres, una mayúscula, una minúscula, un número y un símbolo de `.!@#$%^&*`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| passActual | String | Sí | Contraseña actual. Si no coincide responde `400`. |\n| nuevaPassword | String | Sí | La contraseña debe tener 8 a 16 caracteres, una mayúscula, una minúscula, un número y un símbolo de `.!@#$%^&*`. |",
             "body": {
@@ -367,16 +409,20 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/logout",
+              "raw": "{{scheme}}://{{baseUrl}}/api/logout",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "logout"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
-            "description": "## Descripción\n\nCierra la sesión borrando la cookie `access_token`. El servidor solo expone este endpoint como POST.\n\n## Respuesta\n\n`200` con `status: success` y el mensaje `Sesión cerrada`."
+            "description": "## Descripción\n\nCierra la sesión borrando la cookie `access_token`. El servidor solo expone este endpoint como POST.\n\n## Respuesta\n\n`200` con `status: success` y el mensaje `Sesión cerrada`.",
+            "auth": {
+              "type": "noauth"
+            }
           },
           "response": []
         }
@@ -392,7 +438,7 @@
             "method": "PATCH",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/actualizar-perfil",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/actualizar-perfil",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -400,7 +446,8 @@
                 "api",
                 "auth",
                 "actualizar-perfil"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nActualiza nombre, teléfono y, si se adjunta, la foto. El archivo va en el campo `avatar` (JPG o PNG, hasta 5 MB).\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| nombre | String | No | Nuevo nombre. |\n| telefono | String | No | Teléfono de contacto. |\n| avatar | Archivo o URL | No | Imagen nueva o URL ya guardada. |",
             "body": {
@@ -435,7 +482,7 @@
             "method": "PUT",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/usuario/actualizar-avatar",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/usuario/actualizar-avatar",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -444,7 +491,8 @@
                 "auth",
                 "usuario",
                 "actualizar-avatar"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nEl controlador espera una imagen en `req.file` y guarda su URL como avatar. La ruta está montada, pero hoy no pasa por el middleware de subida: la foto que sí se procesa es la de **Actualizar Perfil**.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`."
           },
@@ -462,16 +510,20 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/get-productos",
+              "raw": "{{scheme}}://{{baseUrl}}/api/get-productos",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "get-productos"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
-            "description": "## Descripción\n\nDevuelve los productos activos publicados en la tienda. Si no hay ninguno responde `200` con un arreglo vacío. No requiere sesión."
+            "description": "## Descripción\n\nDevuelve los productos activos publicados en la tienda. Si no hay ninguno responde `200` con un arreglo vacío. No requiere sesión.",
+            "auth": {
+              "type": "noauth"
+            }
           },
           "response": []
         },
@@ -481,14 +533,15 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/registro-productos",
+              "raw": "{{scheme}}://{{baseUrl}}/api/registro-productos",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "registro-productos"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nCrea un producto del catálogo y lo publica en la tienda. Las imágenes van en el campo repetible `imagenes` (JPG o PNG, máximo 5 archivos y 5 MB cada uno).\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. Permiso `catalog:write`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| nombre | String | Sí | Nombre comercial. |\n| descripcion | String | Sí | Texto del producto. |\n| precio | Number | Sí | Precio en pesos, sin decimales. |\n| categoria | String | Sí | Categoría del catálogo. |\n| stock | Number | Sí | Existencias iniciales. |\n| imagenes | Archivo | Sí | Al menos una imagen. |",
             "body": {
@@ -541,14 +594,22 @@
             "method": "PUT",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/productos/{{productoId}}",
+              "raw": "{{scheme}}://{{baseUrl}}/api/productos/:productoId",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "productos",
-                "{{productoId}}"
+                ":productoId"
+              ],
+              "protocol": "{{scheme}}",
+              "variable": [
+                {
+                  "key": "productoId",
+                  "value": "",
+                  "description": "Identificador de productoId"
+                }
               ]
             },
             "description": "## Descripción\n\nReemplaza los datos del producto. `imagenesExistentes` conserva fotos actuales y `imagenes` agrega otras. El total se recorta a 5.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. Permiso `catalog:write`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| productoId | String | Sí | ID de la URL. Viene en la variable `{{productoId}}`. |\n| nombre | String | Sí | Nombre actualizado. |\n| descripcion | String | Sí | Descripción actualizada. |\n| precio | Number | Sí | Precio en pesos. |\n| categoria | String | Sí | Categoría. |\n| stock | Number | Sí | Existencias. |\n| imagenesExistentes | String o arreglo | No | URLs que deben quedarse. Se puede repetir el campo. |\n| imagenes | Archivo | No | Fotos nuevas. |",
@@ -608,14 +669,22 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/productos/{{productoId}}",
+              "raw": "{{scheme}}://{{baseUrl}}/api/productos/:productoId",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "productos",
-                "{{productoId}}"
+                ":productoId"
+              ],
+              "protocol": "{{scheme}}",
+              "variable": [
+                {
+                  "key": "productoId",
+                  "value": "",
+                  "description": "Identificador de productoId"
+                }
               ]
             },
             "description": "## Descripción\n\nElimina el producto del catálogo y registra una notificación.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. Permiso `catalog:write`."
@@ -628,7 +697,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/catalogo",
+              "raw": "{{scheme}}://{{baseUrl}}/api/admin/catalogo",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -636,7 +705,8 @@
                 "api",
                 "admin",
                 "catalogo"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nLista los productos activos que pertenecen al catálogo administrativo, incluidos los que todavía no están en la tienda.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. Permiso `catalog:read`."
           },
@@ -654,7 +724,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/inventario",
+              "raw": "{{scheme}}://{{baseUrl}}/api/admin/inventario",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -662,7 +732,8 @@
                 "api",
                 "admin",
                 "inventario"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nDevuelve los artículos activos del inventario. Una cuenta de logística no recibe el precio.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. Permiso `inventory:read`."
           },
@@ -674,7 +745,7 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/inventario",
+              "raw": "{{scheme}}://{{baseUrl}}/api/admin/inventario",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -682,7 +753,8 @@
                 "api",
                 "admin",
                 "inventario"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nAgrega un artículo que todavía no se publica en la tienda. El precio queda en 0 hasta completarlo en el catálogo.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. Permiso `inventory:write`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| nombre | String | Sí | Nombre del artículo. |\n| categoria | String | Sí | Tipo de artículo. |\n| stock | Number | Sí | Cantidad entera igual o mayor que cero. |\n| codigoBarras | String | No | Código único. Si se repite responde `409`. |\n| imagenes | Archivo | Sí | Al menos una foto. JPG o PNG. |",
             "body": {
@@ -729,7 +801,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/inventario/codigo/{{codigoBarras}}",
+              "raw": "{{scheme}}://{{baseUrl}}/api/admin/inventario/codigo/:codigoBarras",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -738,7 +810,15 @@
                 "admin",
                 "inventario",
                 "codigo",
-                "{{codigoBarras}}"
+                ":codigoBarras"
+              ],
+              "protocol": "{{scheme}}",
+              "variable": [
+                {
+                  "key": "codigoBarras",
+                  "value": "",
+                  "description": "Identificador de codigoBarras"
+                }
               ]
             },
             "description": "## Descripción\n\nBusca un artículo activo por su código de barras.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. Permiso `inventory:read`."
@@ -756,7 +836,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/inventario/codigo/{{codigoBarras}}",
+              "raw": "{{scheme}}://{{baseUrl}}/api/admin/inventario/codigo/:codigoBarras",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -765,7 +845,15 @@
                 "admin",
                 "inventario",
                 "codigo",
-                "{{codigoBarras}}"
+                ":codigoBarras"
+              ],
+              "protocol": "{{scheme}}",
+              "variable": [
+                {
+                  "key": "codigoBarras",
+                  "value": "",
+                  "description": "Identificador de codigoBarras"
+                }
               ]
             },
             "description": "## Descripción\n\nSuma o resta existencias usando el código de barras. Un delta negativo no puede dejar el stock por debajo de cero.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. Permiso `inventory:write`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| delta | Number | Sí | Entero distinto de cero. Positivo entra, negativo sale. |",
@@ -792,7 +880,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/inventario/{{productoId}}/stock",
+              "raw": "{{scheme}}://{{baseUrl}}/api/admin/inventario/:productoId/stock",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -800,8 +888,16 @@
                 "api",
                 "admin",
                 "inventario",
-                "{{productoId}}",
+                ":productoId",
                 "stock"
+              ],
+              "protocol": "{{scheme}}",
+              "variable": [
+                {
+                  "key": "productoId",
+                  "value": "",
+                  "description": "Identificador de productoId"
+                }
               ]
             },
             "description": "## Descripción\n\nFija la cantidad con `stock` o aplica un cambio con `delta`. Envía solo uno de los dos.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. Permiso `inventory:write`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| stock | Number | Uno de los dos | Nueva cantidad absoluta, entero mayor o igual que cero. |\n| delta | Number | Uno de los dos | Ajuste entero distinto de cero. |",
@@ -828,7 +924,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/inventario/{{productoId}}/codigo",
+              "raw": "{{scheme}}://{{baseUrl}}/api/admin/inventario/:productoId/codigo",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -836,8 +932,16 @@
                 "api",
                 "admin",
                 "inventario",
-                "{{productoId}}",
+                ":productoId",
                 "codigo"
+              ],
+              "protocol": "{{scheme}}",
+              "variable": [
+                {
+                  "key": "productoId",
+                  "value": "",
+                  "description": "Identificador de productoId"
+                }
               ]
             },
             "description": "## Descripción\n\nGuarda o quita el código de barras. Una cadena vacía lo elimina.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. Permiso `inventory:write`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| codigoBarras | String | No | Código único. Vacío para quitarlo. |",
@@ -859,7 +963,7 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/inventario/{{productoId}}",
+              "raw": "{{scheme}}://{{baseUrl}}/api/admin/inventario/:productoId",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -867,7 +971,15 @@
                 "api",
                 "admin",
                 "inventario",
-                "{{productoId}}"
+                ":productoId"
+              ],
+              "protocol": "{{scheme}}",
+              "variable": [
+                {
+                  "key": "productoId",
+                  "value": "",
+                  "description": "Identificador de productoId"
+                }
               ]
             },
             "description": "## Descripción\n\nMarca el artículo como inactivo. No borra el documento.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. Permiso `inventory:write`."
@@ -885,7 +997,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/inventario/exportar-catalogo",
+              "raw": "{{scheme}}://{{baseUrl}}/api/admin/inventario/exportar-catalogo",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -894,7 +1006,8 @@
                 "admin",
                 "inventario",
                 "exportar-catalogo"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nPasa artículos de inventario al catálogo como borrador. Todavía no quedan publicados en la tienda.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| ids | String[] | Sí | IDs de artículos activos que aún no están en el catálogo. |",
             "body": {
@@ -926,14 +1039,15 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/pedidos",
+              "raw": "{{scheme}}://{{baseUrl}}/api/pedidos",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "pedidos"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nRegistra un pedido y descuenta el stock. Si hay sesión, el pedido queda asociado a esa cuenta. Si no hay sesión, el correo del envío es obligatorio y la respuesta incluye `guestClaimToken` para vincularlo después. `NEQUI` y `CARD` preparan el checkout de Wompi.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| metodoPago | String | No | `Contraentrega`, `NEQUI` o `CARD`. Si falta, queda contraentrega. |\n| productos | Objeto[] | Sí | De 1 a 50 líneas. Cada una lleva `productoId` y `cantidad` entera entre 1 y 1000. |\n| datosEnvio.nombres | String | Sí | Nombre de quien recibe. |\n| datosEnvio.apellidos | String | Sí | Apellidos de quien recibe. |\n| datosEnvio.whatsapp | String | Sí | Teléfono de contacto. |\n| datosEnvio.correo | String | Invitado | Obligatorio si no hay sesión. Debe coincidir para reclamar el pedido. |\n| datosEnvio.departamento | String | Sí | Departamento de entrega. |\n| datosEnvio.municipio | String | Sí | Municipio de entrega. |\n| datosEnvio.direccion | String | Sí | Dirección. |\n| datosEnvio.barrio | String | Sí | Barrio. |\n\n## Respuesta\n\n`201` con el pedido. `409` si un producto no está en la tienda o no hay stock.",
             "body": {
@@ -944,6 +1058,9 @@
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -954,7 +1071,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/pedidos/mis-pedidos",
+              "raw": "{{scheme}}://{{baseUrl}}/api/pedidos/mis-pedidos",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -962,7 +1079,8 @@
                 "api",
                 "pedidos",
                 "mis-pedidos"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nLista los pedidos de la cuenta autenticada, del más reciente al más antiguo.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`."
           },
@@ -979,15 +1097,23 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/pedidos/{{pedidoId}}/estado",
+              "raw": "{{scheme}}://{{baseUrl}}/api/pedidos/:pedidoId/estado",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "pedidos",
-                "{{pedidoId}}",
+                ":pedidoId",
                 "estado"
+              ],
+              "protocol": "{{scheme}}",
+              "variable": [
+                {
+                  "key": "pedidoId",
+                  "value": "",
+                  "description": "Identificador de pedidoId"
+                }
               ]
             },
             "description": "## Descripción\n\nEl dueño cancela su propio pedido solo si sigue en `Pendiente`. Devuelve el stock una sola vez.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| motivo | String | Sí | Motivo de 1 a 300 caracteres. |\n| estado | String | No | Si se envía, solo se acepta `Cancelado`. |",
@@ -1014,7 +1140,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/pedidos/reclamar",
+              "raw": "{{scheme}}://{{baseUrl}}/api/pedidos/reclamar",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1022,7 +1148,8 @@
                 "api",
                 "pedidos",
                 "reclamar"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nAsocia a la cuenta verificada un pedido hecho como invitado. El correo de la cuenta debe ser el del envío.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. Rol `user` verificado.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| claimToken | String | Sí | Token devuelto al crear el pedido. Entre 40 y 100 caracteres. |",
             "body": {
@@ -1043,7 +1170,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/pedidos/estado-pago?reference=CDIS123&id=ID_TRANSACCION_WOMPI",
+              "raw": "{{scheme}}://{{baseUrl}}/api/pedidos/estado-pago?reference=CDIS123&id=ID_TRANSACCION_WOMPI",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1063,9 +1190,13 @@
                   "value": "ID_TRANSACCION_WOMPI",
                   "description": "ID de la transacción en Wompi."
                 }
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
-            "description": "## Descripción\n\nConsulta en Wompi el resultado de un pago y actualiza el pedido si la transacción corresponde.\n\n## Query\n\n| Campo | Ejemplo | Descripción |\n| --- | --- | --- |\n| reference | CDIS123 | Referencia de pago del pedido. |\n| id | ID_TRANSACCION_WOMPI | ID de la transacción en Wompi. |"
+            "description": "## Descripción\n\nConsulta en Wompi el resultado de un pago y actualiza el pedido si la transacción corresponde.\n\n## Query\n\n| Campo | Ejemplo | Descripción |\n| --- | --- | --- |\n| reference | CDIS123 | Referencia de pago del pedido. |\n| id | ID_TRANSACCION_WOMPI | ID de la transacción en Wompi. |",
+            "auth": {
+              "type": "noauth"
+            }
           },
           "response": []
         },
@@ -1080,7 +1211,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/pagos/wompi/webhook",
+              "raw": "{{scheme}}://{{baseUrl}}/api/pagos/wompi/webhook",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1089,7 +1220,8 @@
                 "pagos",
                 "wompi",
                 "webhook"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nLo llama Wompi cuando cambia una transacción. Valida la firma con el secreto de eventos. No está pensado para enviarse a mano: sin la firma correcta responde `400` o `401`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| event | String | Sí | Debe ser `transaction.updated`. |\n| data.transaction | Objeto | Sí | Transacción de Wompi, incluida la referencia del pedido. |\n| signature | Objeto | Sí | Propiedades firmadas y checksum. |\n| timestamp | Number | Sí | Marca de tiempo incluida en la firma. |\n| environment | String | En producción | En producción debe ser `prod`. |",
             "body": {
@@ -1100,6 +1232,9 @@
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -1110,7 +1245,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/pedidos",
+              "raw": "{{scheme}}://{{baseUrl}}/api/admin/pedidos",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1118,7 +1253,8 @@
                 "api",
                 "admin",
                 "pedidos"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nDevuelve todos los pedidos con el nombre y el correo del cliente.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`."
           },
@@ -1135,7 +1271,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/pedidos/{{pedidoId}}/estado",
+              "raw": "{{scheme}}://{{baseUrl}}/api/admin/pedidos/:pedidoId/estado",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1143,8 +1279,16 @@
                 "api",
                 "admin",
                 "pedidos",
-                "{{pedidoId}}",
+                ":pedidoId",
                 "estado"
+              ],
+              "protocol": "{{scheme}}",
+              "variable": [
+                {
+                  "key": "pedidoId",
+                  "value": "",
+                  "description": "Identificador de pedidoId"
+                }
               ]
             },
             "description": "## Descripción\n\nCambia el estado desde administración. Si pasa a `Cancelado` y el stock ya se había descontado, lo devuelve una sola vez.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| estado | String | Sí | `Pendiente`, `Comprobado`, `Enviado`, `Entregado` o `Cancelado`. |\n| motivo | String | Al cancelar | Se guarda cuando el estado es `Cancelado`. Máximo 300 caracteres. |",
@@ -1172,14 +1316,15 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/get-notificaciones",
+              "raw": "{{scheme}}://{{baseUrl}}/api/get-notificaciones",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "get-notificaciones"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nDevuelve las notificaciones del panel.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`."
           },
@@ -1191,14 +1336,22 @@
             "method": "PATCH",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/notificaciones/{{notificacionId}}",
+              "raw": "{{scheme}}://{{baseUrl}}/api/notificaciones/:notificacionId",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "notificaciones",
-                "{{notificacionId}}"
+                ":notificacionId"
+              ],
+              "protocol": "{{scheme}}",
+              "variable": [
+                {
+                  "key": "notificacionId",
+                  "value": "",
+                  "description": "Identificador de notificacionId"
+                }
               ]
             },
             "description": "## Descripción\n\nMarca una notificación como leída.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`."
@@ -1211,14 +1364,15 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/notificaciones-todas",
+              "raw": "{{scheme}}://{{baseUrl}}/api/notificaciones-todas",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "notificaciones-todas"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nElimina todas las notificaciones.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`."
           },
@@ -1236,16 +1390,20 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/portada",
+              "raw": "{{scheme}}://{{baseUrl}}/api/portada",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "portada"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
-            "description": "## Descripción\n\nDevuelve las diapositivas ordenadas. Si la colección está vacía, crea las tres diapositivas iniciales. No requiere sesión."
+            "description": "## Descripción\n\nDevuelve las diapositivas ordenadas. Si la colección está vacía, crea las tres diapositivas iniciales. No requiere sesión.",
+            "auth": {
+              "type": "noauth"
+            }
           },
           "response": []
         },
@@ -1255,7 +1413,7 @@
             "method": "PUT",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/portada",
+              "raw": "{{scheme}}://{{baseUrl}}/api/admin/portada",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1263,7 +1421,8 @@
                 "api",
                 "admin",
                 "portada"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nReemplaza la portada completa. El orden del arreglo es el orden del carrusel. Una diapositiva nueva no lleva `_id`; una existente sí, para actualizarla. Las que no vengan en el arreglo se eliminan. La imagen nueva de la posición N va en `imagen_N`.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| slides | JSON | Sí | Arreglo de 1 a 12 diapositivas, enviado como texto. |\n| slides[].eyebrow | String | Sí | Frase superior. Máximo 32 caracteres. |\n| slides[].etiqueta | String | Sí | Etiqueta sobre la imagen. Máximo 26. |\n| slides[].titulo | String | Sí | Título. Máximo 64. |\n| slides[].desc | String | Sí | Descripción breve. Máximo 180. |\n| slides[].tag | String | Sí | Texto inferior del cuadro. Máximo 28. |\n| slides[].detalle | String | Sí | Texto de Más información. Máximo 500. |\n| slides[].img | String | Sí | URL actual. Si se adjunta archivo, el servidor usa ese archivo. |\n| slides[].iconKey | String | No | `globe`, `leaf` o `location`. Si falta, queda `leaf`. |\n| imagen_0 | Archivo | No | Foto de la primera diapositiva. Repetir como `imagen_1`, `imagen_2`, etc. JPG, PNG, WebP, GIF, AVIF, BMP, TIFF o HEIC, hasta 8 MB. |",
             "body": {
@@ -1298,7 +1457,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/admin/usuarios?page=1&search=&status=all",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/admin/usuarios?page=1&search=&status=all",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1324,7 +1483,8 @@
                   "value": "all",
                   "description": "`all`, `active` o `pending`."
                 }
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nLista las cuentas con rol cliente.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`.\n\n## Query\n\n| Campo | Ejemplo | Descripción |\n| --- | --- | --- |\n| page | 1 | Página. Cada página trae 10 clientes. |\n| search | — | Filtra por nombre o correo. |\n| status | all | `all`, `active` o `pending`. |"
           },
@@ -1336,7 +1496,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/admin/usuarios/{{usuarioId}}/actividad",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/admin/usuarios/:usuarioId/actividad",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1345,8 +1505,16 @@
                 "auth",
                 "admin",
                 "usuarios",
-                "{{usuarioId}}",
+                ":usuarioId",
                 "actividad"
+              ],
+              "protocol": "{{scheme}}",
+              "variable": [
+                {
+                  "key": "usuarioId",
+                  "value": "",
+                  "description": "Identificador de usuarioId"
+                }
               ]
             },
             "description": "## Descripción\n\nResume visitas, formularios y pedidos de un cliente.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`."
@@ -1359,7 +1527,7 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/admin/usuarios/{{usuarioId}}",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/admin/usuarios/:usuarioId",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1368,7 +1536,15 @@
                 "auth",
                 "admin",
                 "usuarios",
-                "{{usuarioId}}"
+                ":usuarioId"
+              ],
+              "protocol": "{{scheme}}",
+              "variable": [
+                {
+                  "key": "usuarioId",
+                  "value": "",
+                  "description": "Identificador de usuarioId"
+                }
               ]
             },
             "description": "## Descripción\n\nElimina una cuenta de cliente y su actividad. No elimina pedidos y no permite borrar la cuenta que está usando la sesión.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`."
@@ -1386,7 +1562,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/admin/usuarios",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/admin/usuarios",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1395,7 +1571,8 @@
                 "auth",
                 "admin",
                 "usuarios"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nElimina de 1 a 10 cuentas de cliente, sin repetir IDs.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| ids | String[] | Sí | Entre 1 y 10 IDs de clientes. |",
             "body": {
@@ -1416,7 +1593,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/admin/roles",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/admin/roles",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1425,7 +1602,8 @@
                 "auth",
                 "admin",
                 "roles"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nDevuelve los roles disponibles y las cuentas distintas de quien consulta.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`."
           },
@@ -1442,7 +1620,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/admin/roles/{{usuarioId}}",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/admin/roles/:usuarioId",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1451,7 +1629,15 @@
                 "auth",
                 "admin",
                 "roles",
-                "{{usuarioId}}"
+                ":usuarioId"
+              ],
+              "protocol": "{{scheme}}",
+              "variable": [
+                {
+                  "key": "usuarioId",
+                  "value": "",
+                  "description": "Identificador de usuarioId"
+                }
               ]
             },
             "description": "## Descripción\n\nCambia el rol y los permisos de otra cuenta. No se puede cambiar el rol propio y debe quedar al menos un administrador.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| rol | String | Sí | `admin`, `user`, `logistica` o `catalogo`. |\n| permisos | String[] | Sí | Logística: `inventory:read`, `inventory:write`. Catálogo: `catalog:read`, `catalog:write`. Admin queda con `*`. Cliente no lleva permisos. |",
@@ -1473,7 +1659,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/admin/configuracion",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/admin/configuracion",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1482,7 +1668,8 @@
                 "auth",
                 "admin",
                 "configuracion"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nLee las preferencias de notificación y el umbral de stock de la cuenta administradora.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`."
           },
@@ -1499,7 +1686,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/admin/configuracion",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/admin/configuracion",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1508,7 +1695,8 @@
                 "auth",
                 "admin",
                 "configuracion"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nGuarda las preferencias de la cuenta administradora.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| notificarPedidos | Boolean | Sí | Avisos de pedidos. |\n| notificarInventario | Boolean | Sí | Avisos de inventario. |\n| notificarCatalogo | Boolean | Sí | Avisos de catálogo. |\n| umbralStockCritico | Number | Sí | Entero de 0 a 10000. |",
             "body": {
@@ -1529,7 +1717,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/admin/analitica-productos",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/admin/analitica-productos",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1538,7 +1726,8 @@
                 "auth",
                 "admin",
                 "analitica-productos"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nResume pedidos, unidades, ingresos, visitas e interés por producto.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. El rol de la cuenta debe ser `admin`."
           },
@@ -1555,7 +1744,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/auth/actividad",
+              "raw": "{{scheme}}://{{baseUrl}}/api/auth/actividad",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1563,7 +1752,8 @@
                 "api",
                 "auth",
                 "actividad"
-              ]
+              ],
+              "protocol": "{{scheme}}"
             },
             "description": "## Descripción\n\nRegistra una visita o un intento de formulario del cliente. Hay un máximo de 120 eventos por hora.\n\nRequiere la cookie `access_token`. En Postman se guarda sola al ejecutar **Login Usuario** o **Ingreso con Google** contra el mismo `{{baseUrl}}`. También se acepta el header `Authorization: Bearer <jwt>`. Solo rol `user`.\n\n## Body - Parámetros de entrada\n\n| Campo | Tipo | Obligatorio | Descripción |\n| --- | --- | --- | --- |\n| tipo | String | Sí | `product_view` o `form_attempt`. |\n| productoId | String | Según el tipo | Obligatorio en una visita y en `product_interest`. |\n| tipoFormulario | String | En form_attempt | `cart`, `quote` o `product_interest`. |",
             "body": {
@@ -1590,17 +1780,31 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/",
+              "raw": "{{scheme}}://{{baseUrl}}/",
               "host": [
                 "{{baseUrl}}"
               ],
-              "path": []
+              "path": [],
+              "protocol": "{{scheme}}"
             },
-            "description": "## Descripción\n\nResponde en texto plano que el servidor de CDISFRUTA está funcionando. No usa el prefijo `/api`."
+            "description": "## Descripción\n\nResponde en texto plano que el servidor de CDISFRUTA está funcionando. No usa el prefijo `/api`.",
+            "auth": {
+              "type": "noauth"
+            }
           },
           "response": []
         }
       ]
     }
-  ]
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  }
 }
