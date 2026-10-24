@@ -13,11 +13,18 @@ import routerPedidos from './backend/routes/orderRoutes.js'; // <-- Importado si
 import { routerLanding } from './backend/routes/landingRoutes.js';
 import { sessionCookieOptions } from './backend/utils/sessionCookie.js';
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://cdisfruta.vercel.app',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 const corsOptions = {
-  origin: [
-    'http://localhost:5173', 
-    'https://cdisfruta.vercel.app'
-  ],
+  origin(origin, callback) {
+    // Permite herramientas sin Origin (Postman, health checks) y orígenes listados
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`CORS bloqueado para origen: ${origin}`));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true

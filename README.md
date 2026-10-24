@@ -37,7 +37,7 @@ Un administrador puede cambiar el rol de otra cuenta. No puede quitarse el rol a
 ### Catálogo e inventario
 
 - La tienda pública lista solo productos activos y publicados.
-- El catálogo crea, edita y elimina productos con precio, descripción y hasta 5 imágenes JPG o PNG de 5 MB.
+- El catálogo crea, edita y elimina productos con precio, descripción y hasta 5 imágenes (JPG, PNG, WebP, GIF, AVIF, BMP, TIFF o HEIC) de 5 MB.
 - El inventario crea artículos todavía sin publicar, ajusta stock, asigna código de barras y retira un artículo marcándolo inactivo.
 - Exportar al catálogo pasa artículos a borrador. Siguen fuera de la tienda hasta completarlos y publicarlos.
 - El stock de un pedido se descuenta al crearlo y se devuelve una sola vez si el cliente lo cancela, si administración lo cancela o si Wompi lo rechaza.

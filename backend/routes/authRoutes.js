@@ -47,6 +47,5 @@ routerUsuarios.get('/admin/roles', verifyToken, requireAdmin, listarAsignaciones
 routerUsuarios.patch('/admin/roles/:id', verifyToken, requireAdmin, asignarRolUsuarioAdmin);
 routerUsuarios.get('/admin/analitica-productos', verifyToken, requireAdmin, obtenerAnaliticaProductosAdmin);
 routerUsuarios.post('/actividad', verifyToken, registrarActividadUsuario);
-// Nota: Si usas multer para la imagen, añade el middleware de subida ej: verifyToken, upload.single('avatar'), actualizarAvatar
-routerUsuarios.put('/usuario/actualizar-avatar', verifyToken, actualizarAvatar); 
+routerUsuarios.put('/usuario/actualizar-avatar', verifyToken, subirAvatarPerfil, actualizarAvatar); 
 
