@@ -261,24 +261,33 @@ export const cambiarPasswordDesdeApp = async (req, res) => {
 export const actualizarPerfil = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { nombre, telefono, avatar } = req.body;
+    const nombre = typeof req.body?.nombre === 'string' ? req.body.nombre.trim() : undefined;
+    const telefono = typeof req.body?.telefono === 'string' ? req.body.telefono.trim() : undefined;
+    const avatarTexto = typeof req.body?.avatar === 'string' ? req.body.avatar.trim() : undefined;
 
-    let avatarFinal = avatar;
-
-    if (req.file) {
-      avatarFinal = req.file.path;
+    if (nombre !== undefined && nombre.length < 2) {
+      return res.status(400).json({ status: 'error', message: 'El nombre debe tener al menos 2 caracteres.' });
     }
 
-    const datosActualizar = { nombre, telefono };
-    if (avatarFinal !== undefined) {
-      datosActualizar.avatar = avatarFinal;
+    const datosActualizar = {};
+    if (nombre !== undefined) datosActualizar.nombre = nombre;
+    if (telefono !== undefined) datosActualizar.telefono = telefono;
+
+    if (req.file) {
+      datosActualizar.avatar = req.file.path || req.file.secure_url || req.file.url;
+    } else if (avatarTexto && !avatarTexto.startsWith('blob:')) {
+      datosActualizar.avatar = avatarTexto;
+    }
+
+    if (Object.keys(datosActualizar).length === 0) {
+      return res.status(400).json({ status: 'error', message: 'No hay cambios para guardar.' });
     }
 
     const usuarioActualizado = await User.findByIdAndUpdate(
       userId,
-      datosActualizar,
+      { $set: datosActualizar },
       { returnDocument: 'after', runValidators: true }
-    ).select('-password'); 
+    ).select('-password');
 
     if (!usuarioActualizado) {
       return res.status(404).json({ status: 'error', message: 'Usuario no encontrado' });

@@ -84,4 +84,21 @@ const uploadAvatar = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: acceptImage,
 });
-export const subirAvatarPerfil = uploadAvatar.single("avatar");
+
+/** Multer + Cloudinary con errores controlados (evita 500 opacos en Vercel). */
+export const subirAvatarPerfil = (req, res, next) => {
+  uploadAvatar.single("avatar")(req, res, (error) => {
+    if (!error) return next();
+    console.error("Error al subir avatar:", error.message || error);
+    if (error instanceof multer.MulterError) {
+      if (error.code === "LIMIT_FILE_SIZE") {
+        return res.status(400).json({ status: "error", message: "La imagen supera el máximo de 5 MB." });
+      }
+      return res.status(400).json({ status: "error", message: "No se pudo procesar la imagen del perfil." });
+    }
+    return res.status(400).json({
+      status: "error",
+      message: error.message || "No se pudo subir la imagen del perfil.",
+    });
+  });
+};
