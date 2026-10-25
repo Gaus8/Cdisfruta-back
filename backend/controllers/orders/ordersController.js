@@ -89,8 +89,17 @@ export const crearPedido = async (req, res) => {
     const { productos, datosEnvio } = req.body;
     const metodoPago = ['Contraentrega', 'NEQUI', 'CARD'].includes(req.body.metodoPago) ? req.body.metodoPago : 'Contraentrega';
     const digital = metodoPago !== 'Contraentrega';
-    if (digital && (!process.env.WOMPI_PUBLIC_KEY || !process.env.WOMPI_INTEGRITY_SECRET)) {
+    const wompiPublicKey = String(process.env.WOMPI_PUBLIC_KEY || '');
+    const wompiIntegrity = String(process.env.WOMPI_INTEGRITY_SECRET || '');
+    if (digital && (!wompiPublicKey || !wompiIntegrity)) {
       return res.status(503).json({ status: 'error', message: 'El pago digital no está configurado todavía. Selecciona pago contra entrega o inténtalo más tarde.' });
+    }
+    // En desarrollo/universidad solo permitimos llaves de Sandbox (sin cobros reales).
+    if (digital && process.env.NODE_ENV !== 'production' && !wompiPublicKey.includes('_test_')) {
+      return res.status(503).json({
+        status: 'error',
+        message: 'Usa llaves Sandbox de Wompi (pub_test_...). Las de producción (pub_prod_) no están permitidas en este entorno de pruebas.'
+      });
     }
 
     if (!Array.isArray(productos) || productos.length === 0 || productos.length > 50) {
