@@ -9,8 +9,24 @@ import {
 
 export const listarMisDirecciones = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('direccionEnvio direccionesEnvio');
+    const user = await User.findById(req.user.id).select('direccionEnvio direccionesEnvio telefono');
     if (!user) return res.status(404).json({ status: 'error', message: 'Usuario no encontrado' });
+
+    // Si solo hay dirección legacy (de una compra), la migramos a la lista visible en el perfil.
+    const enLista = Array.isArray(user.direccionesEnvio) ? user.direccionesEnvio.length : 0;
+    if (enLista === 0 && tieneDireccionEnvio(user.direccionEnvio)) {
+      try {
+        const saved = await guardarDireccionEnvioUsuario(User, user._id, user.direccionEnvio, { etiqueta: 'Principal' });
+        return res.status(200).json({
+          status: 'success',
+          direccionesEnvio: saved.direccionesEnvio,
+          direccionEnvio: saved.direccionEnvio,
+        });
+      } catch (migrateError) {
+        console.error('No se pudo migrar la dirección legacy:', migrateError.message);
+      }
+    }
+
     return res.status(200).json({
       status: 'success',
       direccionesEnvio: listarDireccionesUsuario(user),
