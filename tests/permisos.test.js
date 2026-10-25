@@ -161,5 +161,15 @@ describe('Roles y permisos', () => {
 
     const catalogo = await http.get('/api/admin/catalogo').set('Cookie', admin.cookie);
     expect(catalogo.body.map((item) => item.nombre)).toContain('Pitaya');
+
+    const retirado = await http.patch('/api/admin/inventario/retirar-catalogo').set('Cookie', admin.cookie).send({
+      ids: [String(producto._id)],
+    });
+    expect(retirado.status).toBe(200);
+    expect(retirado.body.products[0].enCatalogo).toBe(false);
+    expect(retirado.body.products[0].publicarEnTienda).toBe(false);
+
+    const catalogoTrasRetiro = await http.get('/api/admin/catalogo').set('Cookie', admin.cookie);
+    expect(catalogoTrasRetiro.body.map((item) => item.nombre)).not.toContain('Pitaya');
   });
 });

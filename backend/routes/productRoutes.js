@@ -7,7 +7,7 @@ import {
 } from '../controllers/products/productsController.js'
 import { subirImg } from '../middlewares/subirImg.js';
 import { verifyToken } from '../middlewares/getToken.js';
-import { getInventory, getAdminCatalog, createInventoryProduct, exportInventoryToCatalog, updateInventoryStock, updateInventoryStockByBarcode, assignInventoryBarcode, getInventoryProductByBarcode, deleteInventoryProduct } from '../controllers/products/productsController.js';
+import { getInventory, getAdminCatalog, createInventoryProduct, exportInventoryToCatalog, removeInventoryFromCatalog, updateInventoryStock, updateInventoryStockByBarcode, assignInventoryBarcode, getInventoryProductByBarcode, deleteInventoryProduct } from '../controllers/products/productsController.js';
 import { requireAdmin, requirePermission } from '../middlewares/rbac.js';
 
 export const routerProductos = express.Router();
@@ -16,6 +16,7 @@ routerProductos.get('/admin/inventario', verifyToken, requirePermission('invento
 routerProductos.get('/admin/catalogo', verifyToken, requirePermission('catalog:read'), getAdminCatalog);
 routerProductos.post('/admin/inventario', verifyToken, requirePermission('inventory:write'), subirImg, createInventoryProduct);
 routerProductos.patch('/admin/inventario/exportar-catalogo', verifyToken, requireAdmin, exportInventoryToCatalog);
+routerProductos.patch('/admin/inventario/retirar-catalogo', verifyToken, requireAdmin, removeInventoryFromCatalog);
 routerProductos.get('/admin/inventario/codigo/:codigo', verifyToken, requirePermission('inventory:read'), getInventoryProductByBarcode);
 routerProductos.patch('/admin/inventario/codigo/:codigo', verifyToken, requirePermission('inventory:write'), updateInventoryStockByBarcode);
 routerProductos.patch('/admin/inventario/:id/codigo', verifyToken, requirePermission('inventory:write'), assignInventoryBarcode);

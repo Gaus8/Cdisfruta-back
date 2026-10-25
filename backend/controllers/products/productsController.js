@@ -234,6 +234,32 @@ export const exportInventoryToCatalog = async (req, res) => {
   }
 };
 
+/** Quita artículos del catálogo/tienda; siguen en inventario con su stock. */
+export const removeInventoryFromCatalog = async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body.ids) ? [...new Set(req.body.ids)] : [];
+    if (!ids.length || ids.some((id) => !mongoose.isValidObjectId(id))) {
+      return res.status(400).json({ message: 'Selecciona al menos un artículo válido para retirar del catálogo.' });
+    }
+    const products = await Producto.find({ _id: { $in: ids }, activo: true, enCatalogo: { $ne: false } });
+    if (products.length !== ids.length) {
+      return res.status(400).json({ message: 'Algunos artículos seleccionados ya no están en el catálogo.' });
+    }
+    await Producto.updateMany(
+      { _id: { $in: ids }, activo: true, enCatalogo: { $ne: false } },
+      { $set: { enCatalogo: false, publicarEnTienda: false } }
+    );
+    const updated = await Producto.find({ _id: { $in: ids }, activo: true });
+    await notificarInventario(
+      `${updated.length} artículo(s) se retiraron del catálogo y la tienda; permanecen en inventario.`,
+      'retiro_catalogo'
+    );
+    res.status(200).json({ products: updated });
+  } catch (error) {
+    res.status(500).json({ message: 'No se pudieron retirar los artículos del catálogo.', error: error.message });
+  }
+};
+
 export const updateInventoryStock = async (req, res) => {
   try {
     const { id } = req.params;
