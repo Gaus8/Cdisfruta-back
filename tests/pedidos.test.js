@@ -49,6 +49,11 @@ describe('Tienda, pedidos y portada', () => {
     expect(sinStock.status).toBe(409);
     expect((await Producto.findById(producto._id)).stock).toBe(2);
 
+    // Sin llaves Wompi el pago digital debe quedar deshabilitado (503).
+    process.env.WOMPI_PUBLIC_KEY = '';
+    process.env.WOMPI_PRIVATE_KEY = '';
+    process.env.WOMPI_INTEGRITY_SECRET = '';
+    process.env.WOMPI_EVENTS_SECRET = '';
     const digital = await http.post('/api/pedidos').send({
       productos: [{ productoId: String(producto._id), cantidad: 1 }],
       datosEnvio: envio('visita@example.com'),

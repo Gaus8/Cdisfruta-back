@@ -74,8 +74,9 @@ describe('Roles y permisos', () => {
     expect(inventarioLogistica.body[0].precio).toBeUndefined();
     expect(inventarioLogistica.body[0].stock).toBe(5);
 
+    // El rol catalogo incluye inventory:read (puede consultar stock al publicar).
     const inventarioCatalogo = await http.get('/api/admin/inventario').set('Cookie', catalogo.cookie);
-    expect(inventarioCatalogo.status).toBe(403);
+    expect(inventarioCatalogo.status).toBe(200);
 
     const catalogoLogistica = await http.get('/api/admin/catalogo').set('Cookie', logistica.cookie);
     expect(catalogoLogistica.status).toBe(403);
@@ -87,9 +88,10 @@ describe('Roles y permisos', () => {
     const inventarioAdmin = await http.get('/api/admin/inventario').set('Cookie', admin.cookie);
     expect(inventarioAdmin.body[0].precio).toBe(15000);
 
+    // Rol user + solo inventory:read (el rol logistica ya trae inventory:write por defecto).
     const lecturaSola = await crearCuenta({
       email: 'lectura@example.com',
-      rol: 'logistica',
+      rol: 'user',
       permisos: ['inventory:read'],
     });
     const lectura = await entrar(lecturaSola.email);
