@@ -1,8 +1,10 @@
 import { passwordRegex, passwordRuleMessage, validateLoginUser } from '../../validators/userValidators.js';
 import { sessionCookieOptions } from '../../utils/sessionCookie.js';
 import { enviarCorreoRecuperacion } from '../../services/emailService.js';
+import { asegurarDireccionEnvio } from '../../utils/direccionEnvio.js';
 import bcrypt from 'bcrypt';
 import User from '../../models/userSchema.js';
+import Pedido from '../../models/pedidoSchema.js';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { v2 as cloudinary } from 'cloudinary';
@@ -71,17 +73,22 @@ const validateLogin = async (req, res) => {
     { expiresIn: '15m' } // 5m = 5 minutos en jsonwebtoken
   );
 
+  const { direccionEnvio, direccionesEnvio } = await asegurarDireccionEnvio(User, Pedido, user);
+
   return res.cookie('access_token', token, sessionCookieOptions(SESSION_MS))
     .status(200).json({
       status: 'success',
       message: 'Ingreso Exitoso',
       user: {
+        id: user._id,
         nombre: user.nombre,
         email: user.email,
         rol: user.rol,
         permisos: user.permisos || [],
-        telefono: user.telefono, // 👈 ¡Indispensable para que el frontend lo reciba al loguearse!
-        avatar: user.avatar
+        telefono: user.telefono,
+        avatar: user.avatar,
+        direccionEnvio,
+        direccionesEnvio,
       }
     });
 };

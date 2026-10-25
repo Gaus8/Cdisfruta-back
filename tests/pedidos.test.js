@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import Producto from '../backend/models/productsSchema.js';
+import User from '../backend/models/userSchema.js';
 import { crearCuenta, crearProducto, entrar, envio, http, limpiarDb } from './helpers.js';
 
 describe('Tienda, pedidos y portada', () => {
@@ -78,6 +79,16 @@ describe('Tienda, pedidos y portada', () => {
     expect(compra.status).toBe(201);
     expect(compra.body.guestClaimToken).toBeUndefined();
     const pedidoId = compra.body.pedido.id;
+
+    const anaGuardada = await User.findOne({ email: 'ana@example.com' });
+    expect(anaGuardada.direccionEnvio.municipio).toBe('Ubate');
+    expect(anaGuardada.direccionEnvio.direccion).toBe('Calle 10');
+    expect(anaGuardada.direccionEnvio.whatsapp).toBe('3001234567');
+    expect(anaGuardada.telefono).toBe('3001234567');
+
+    const sesion = await http.get('/api/auth/verificar-token').set('Cookie', ana.cookie);
+    expect(sesion.status).toBe(200);
+    expect(sesion.body.user.direccionEnvio.barrio).toBe('Centro');
 
     const mios = await http.get('/api/pedidos/mis-pedidos').set('Cookie', ana.cookie);
     expect(mios.status).toBe(200);

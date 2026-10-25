@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import mongoose from 'mongoose';
 import Producto from '../../models/productsSchema.js';
 import User from '../../models/userSchema.js';
+import { guardarDireccionEnvioUsuario } from '../../utils/direccionEnvio.js';
 
 const mapWompiStatus = (status) => ({
   PENDING: 'PENDIENTE', APPROVED: 'APPROVED', DECLINED: 'DECLINED', ERROR: 'ERROR', VOIDED: 'VOIDED'
@@ -165,6 +166,19 @@ export const crearPedido = async (req, res) => {
       throw createError;
     }
 
+    // Si el cliente tiene sesión, guardamos la dirección en su lista para elegirla después.
+    let direccionGuardada = null;
+    let direccionesEnvio = null;
+    if (usuarioId) {
+      try {
+        const saved = await guardarDireccionEnvioUsuario(User, usuarioId, datosEnvio);
+        direccionGuardada = saved.direccionEnvio;
+        direccionesEnvio = saved.direccionesEnvio;
+      } catch (saveError) {
+        console.error('No se pudo guardar la dirección de envío del usuario:', saveError.message);
+      }
+    }
+
     // Creamos una notificación para el panel de administración
     await Notificacion.create({
       mensaje: `Nuevo pedido recibido de ${datosEnvio.nombres} ${datosEnvio.apellidos} por un valor de $${totalCalculado}`,
@@ -175,6 +189,7 @@ export const crearPedido = async (req, res) => {
       status: 'success',
       message: 'Pedido registrado con éxito',
       pedido: { id: String(nuevoPedido._id), estado: nuevoPedido.estado, total: nuevoPedido.total, fechaCreacion: nuevoPedido.fechaCreacion, productos: nuevoPedido.productos },
+      ...(direccionGuardada ? { direccionEnvio: direccionGuardada, direccionesEnvio } : {}),
       ...(guestClaimToken ? { guestClaimToken } : {}),
       ...(digital ? { checkout: {
         url: 'https://checkout.wompi.co/p/',
@@ -332,8 +347,13 @@ export const reclamarPedidoInvitado = async (req, res) => {
       guestClaimExpiresAt: { $gt: new Date() },
       usuario: null,
       'datosEnvio.correo': String(account.email || '').trim().toLowerCase()
-    }, { $set: { usuario: account._id }, $unset: { guestClaimTokenHash: 1, guestClaimExpiresAt: 1 } }, { returnDocument: 'after' }).select('_id');
+    }, { $set: { usuario: account._id }, $unset: { guestClaimTokenHash: 1, guestClaimExpiresAt: 1 } }, { returnDocument: 'after' }).select('_id datosEnvio');
     if (!order) return res.status(404).json({ status: 'error', message: 'El pedido expiró, ya fue asociado o no pertenece al correo de esta cuenta.' });
+    if (order.datosEnvio) {
+      await guardarDireccionEnvioUsuario(User, account._id, order.datosEnvio, { etiqueta: 'Principal' }).catch((err) => {
+        console.error('No se pudo guardar la dirección al asociar el pedido:', err.message);
+      });
+    }
     return res.status(200).json({ status: 'success', message: 'El pedido quedó asociado a tu cuenta.', pedidoVinculado: String(order._id) });
   } catch (error) {
     console.error('Error al asociar pedido de invitado:', error);

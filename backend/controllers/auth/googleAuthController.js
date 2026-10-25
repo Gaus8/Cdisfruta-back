@@ -1,8 +1,10 @@
 import User from '../../models/userSchema.js';
+import Pedido from '../../models/pedidoSchema.js';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import bcrypt from 'bcrypt';
 import { sessionCookieOptions } from '../../utils/sessionCookie.js';
+import { asegurarDireccionEnvio } from '../../utils/direccionEnvio.js';
 
 const client = new OAuth2Client(
   process.env.GOOGLE_CLIENT_ID,
@@ -85,6 +87,8 @@ export const googleLogin = async (req, res) => {
       { expiresIn: '1h' }
     );
 
+    const { direccionEnvio, direccionesEnvio } = await asegurarDireccionEnvio(User, Pedido, user);
+
     res.cookie('access_token', token, sessionCookieOptions(SESSION_MS))
     .status(200)
     .json({
@@ -92,10 +96,15 @@ export const googleLogin = async (req, res) => {
       message: 'Ingreso Exitoso',
       rol: user.rol,
       user: {
+        id: user._id,
         nombre: user.nombre,
         email: user.email,
         rol: user.rol,
-        permisos: user.permisos || []
+        permisos: user.permisos || [],
+        telefono: user.telefono,
+        avatar: user.avatar,
+        direccionEnvio,
+        direccionesEnvio,
       }
     });
 

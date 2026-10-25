@@ -1,5 +1,6 @@
 import { validateRegisterUser } from '../../validators/userValidators.js';
 import { enviarCorreoVerificacion } from '../../services/emailService.js';
+import { guardarDireccionEnvioUsuario } from '../../utils/direccionEnvio.js';
 import bcrypt from 'bcrypt';
 import User from '../../models/userSchema.js';
 import Pedido from '../../models/pedidoSchema.js';
@@ -107,7 +108,7 @@ export const registrarUsuarioPostCompra = async (req, res) => {
       guestClaimExpiresAt: { $gt: new Date() },
       usuario: null,
       'datosEnvio.correo': email
-    }).select('_id guestClaimExpiresAt').lean();
+    }).select('_id guestClaimExpiresAt datosEnvio').lean();
     if (!pedido) return res.status(400).json({ status: 'error', message: 'El enlace del pedido venció o el correo no coincide con la compra.' });
 
     if (await User.exists({ email })) {
@@ -116,6 +117,7 @@ export const registrarUsuarioPostCompra = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(validar.data.password, 10);
     const codigoSeisDigitos = generarTokenVerificacion();
+    const envio = pedido.datosEnvio || {};
     newUser = await User.create({
       nombre: validar.data.name,
       email,
@@ -124,7 +126,17 @@ export const registrarUsuarioPostCompra = async (req, res) => {
       codigo_verificacion: codigoSeisDigitos,
       verificationEmailLastSentAt: new Date(),
       terminosAceptados: true,
-      fechaAceptacionTerminos: new Date()
+      fechaAceptacionTerminos: new Date(),
+      telefono: String(envio.whatsapp || '').trim(),
+      direccionEnvio: {
+        nombres: String(envio.nombres || '').trim(),
+        apellidos: String(envio.apellidos || '').trim(),
+        whatsapp: String(envio.whatsapp || '').trim(),
+        departamento: String(envio.departamento || '').trim(),
+        municipio: String(envio.municipio || '').trim(),
+        direccion: String(envio.direccion || '').trim(),
+        barrio: String(envio.barrio || '').trim(),
+      },
     });
 
     const linkedOrder = await Pedido.findOneAndUpdate({
@@ -139,6 +151,9 @@ export const registrarUsuarioPostCompra = async (req, res) => {
       await User.deleteOne({ _id: newUser._id });
       return res.status(409).json({ status: 'error', message: 'No se pudo vincular el pedido. Inicia sesión o comunícate con soporte.' });
     }
+
+    // Asegura la dirección en la lista seleccionable del carrito.
+    await guardarDireccionEnvioUsuario(User, newUser._id, envio, { etiqueta: 'Principal' }).catch(() => {});
 
     try {
       await enviarCorreoVerificacion(newUser, codigoSeisDigitos);

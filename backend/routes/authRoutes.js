@@ -15,6 +15,12 @@ import { registrarUsuario, registrarUsuarioPostCompra, reenviarVerificacionPostC
 import { googleLogin } from '../controllers/auth/googleAuthController.js';
 import { subirAvatarPerfil } from '../middlewares/subirImg.js';
 import { verificarTokenController } from '../controllers/auth/sessionController.js';
+import {
+  listarMisDirecciones,
+  crearDireccionEnvio,
+  actualizarDireccionEnvio,
+  eliminarDireccionEnvio,
+} from '../controllers/auth/direccionesController.js';
 import { eliminarUsuarioAdmin, eliminarUsuariosAdmin, listarUsuariosAdmin, obtenerActividadUsuarioAdmin, obtenerAnaliticaProductosAdmin, registrarActividadUsuario } from '../controllers/admin/usersAdminController.js';
 import { asignarRolUsuarioAdmin, listarAsignacionesRolesAdmin } from '../controllers/admin/usersAdminController.js';
 import { requireAdmin, requirePermission } from '../middlewares/rbac.js';
@@ -37,6 +43,10 @@ routerUsuarios.post('/reset-password', restablecerPasswordConToken);
 routerUsuarios.patch('/cambiar-password', verifyToken, cambiarPasswordDesdeApp);
 
 routerUsuarios.patch('/actualizar-perfil', verifyToken, subirAvatarPerfil, actualizarPerfil);
+routerUsuarios.get('/direcciones-envio', verifyToken, listarMisDirecciones);
+routerUsuarios.post('/direcciones-envio', verifyToken, crearDireccionEnvio);
+routerUsuarios.patch('/direcciones-envio/:id', verifyToken, actualizarDireccionEnvio);
+routerUsuarios.delete('/direcciones-envio/:id', verifyToken, eliminarDireccionEnvio);
 routerUsuarios.get('/admin/configuracion', verifyToken, requireAdmin, obtenerPreferenciasAdmin);
 routerUsuarios.patch('/admin/configuracion', verifyToken, requireAdmin, actualizarPreferenciasAdmin);
 routerUsuarios.get('/admin/usuarios', verifyToken, requireAdmin, listarUsuariosAdmin);

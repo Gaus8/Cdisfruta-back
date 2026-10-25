@@ -28,6 +28,33 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
+  // Dirección predeterminada (espejo de la última usada / seleccionada).
+  direccionEnvio: {
+    type: new mongoose.Schema({
+      nombres: { type: String, default: '' },
+      apellidos: { type: String, default: '' },
+      whatsapp: { type: String, default: '' },
+      departamento: { type: String, default: '' },
+      municipio: { type: String, default: '' },
+      direccion: { type: String, default: '' },
+      barrio: { type: String, default: '' },
+    }, { _id: false }),
+    default: () => ({}),
+  },
+  // Direcciones guardadas para elegirlas en el carrito sin rellenar el formulario.
+  direccionesEnvio: {
+    type: [{
+      etiqueta: { type: String, default: 'Casa', trim: true },
+      nombres: { type: String, default: '' },
+      apellidos: { type: String, default: '' },
+      whatsapp: { type: String, default: '' },
+      departamento: { type: String, default: '' },
+      municipio: { type: String, default: '' },
+      direccion: { type: String, default: '' },
+      barrio: { type: String, default: '' },
+    }],
+    default: [],
+  },
   preferenciasAdmin: {
     type: new mongoose.Schema({
       notificarPedidos: { type: Boolean, default: true },

@@ -1,16 +1,17 @@
 import User from '../../models/userSchema.js'
+import Pedido from '../../models/pedidoSchema.js'
+import { asegurarDireccionEnvio } from '../../utils/direccionEnvio.js'
 
 export const verificarTokenController = async (req, res) => {
   try {
-    // req.user.id viene gracias a que tu middleware verifyToken lo decodificó
-    const userId = req.user.id; 
-
-    // Consultamos la base de datos para obtener el avatar y teléfono más recientes
+    const userId = req.user.id;
     const user = await User.findById(userId).select('-password -codigo_verificacion -resetPasswordToken -resetPasswordExpires');
 
     if (!user) {
       return res.status(404).json({ valid: false, message: 'Usuario no encontrado' });
     }
+
+    const { direccionEnvio, direccionesEnvio } = await asegurarDireccionEnvio(User, Pedido, user);
 
     return res.status(200).json({
       valid: true,
@@ -21,7 +22,9 @@ export const verificarTokenController = async (req, res) => {
         rol: user.rol,
         permisos: user.permisos || [],
         telefono: user.telefono,
-        avatar: user.avatar // 👈 Datos frescos directo de MongoDB
+        avatar: user.avatar,
+        direccionEnvio,
+        direccionesEnvio,
       }
     });
   } catch (error) {
