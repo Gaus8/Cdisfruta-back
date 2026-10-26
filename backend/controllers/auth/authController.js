@@ -7,7 +7,6 @@ import User from '../../models/userSchema.js';
 import Pedido from '../../models/pedidoSchema.js';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { v2 as cloudinary } from 'cloudinary';
 
 // 1. LOGIN Y VERIFICACIÓN EXISTENTES
 
